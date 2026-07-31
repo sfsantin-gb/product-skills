@@ -1,0 +1,23 @@
+# Copie para analytics-migrate.config.yml e ajuste a squad.
+# Tudo roda dentro do megazord_mobile — Product OS nao e necessario.
+
+squad:
+  id: ct
+  name: "Conteudos e Trafego"
+  github_team: vd-sellout-conteudos-e-trafego-mld
+
+megazord:
+  root: .
+  codeowners: .github/CODEOWNERS
+
+workspace:
+  dominios: tools/analytics-migrate/config/dominios-ct.md
+  output_dir: tools/analytics-migrate/output
+  guia_escopo: tools/analytics-migrate/docs/GUIA_CONTEXTOS_TAGUEAMENTO_CT.md
+
+discover:
+  scope_mode: merge
+  include_shared: true
+  include_packages: true
+  include_megazord_app: false
+  force: false
