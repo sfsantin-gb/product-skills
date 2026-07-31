@@ -1,4 +1,4 @@
-﻿# product-skills
+# product-skills
 
 Catalogo de **Agent Skills de produto** para PMs, TPMs e analistas — estilo Spec Kit: clone + `install.ps1`. Sem Cursor Plugin marketplace.
 
