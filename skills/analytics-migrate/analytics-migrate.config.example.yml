@@ -12,6 +12,7 @@ megazord:
 
 workspace:
   dominios: tools/analytics-migrate/config/dominios-ct.md
+  perguntas_negocio: tools/analytics-migrate/config/perguntas-negocio-ct.md
   output_dir: tools/analytics-migrate/output
   guia_escopo: tools/analytics-migrate/docs/GUIA_CONTEXTOS_TAGUEAMENTO_CT.md
 

@@ -11,10 +11,10 @@ Bootstrap do tagueamento para qualquer squad do megazord. **Roda inteiro dentro 
 
 ## Instalacao (primeira vez)
 
-**Catalogo PM:** [product-skills](https://github.com/grupoboticario/product-skills)
+**Catalogo PM:** [product-skills](https://github.com/sfsantin-gb/product-skills)
 
 ```powershell
-git clone https://github.com/grupoboticario/product-skills.git
+git clone https://github.com/sfsantin-gb/product-skills.git
 git clone https://github.com/grupoboticario/megazord_mobile.git C:\megazord_mobile
 cd product-skills
 powershell -ExecutionPolicy Bypass -File install.ps1 -Target C:\megazord_mobile

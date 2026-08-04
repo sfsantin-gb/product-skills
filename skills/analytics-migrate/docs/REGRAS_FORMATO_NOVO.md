@@ -13,7 +13,7 @@ Fonte de verdade para a migracao do inventario legado (`TAGUEAMENTO_LEGADO_CT.*`
 
 ## 1. Envelope da sessao
 
-`client_id` e `session_id` sao responsabilidade do **provider** (`AnalyticsProvider` / bootstrap do app), nao de cada classe `*Tag`. As tags disparam apenas o array `events`.
+Cada valor de `json_novo` no de-para (`TAGUEAMENTO_MIGRADO_CT.csv`) deve usar o **envelope completo** abaixo. `client_id` e `session_id` sao responsabilidade do **provider** (`AnalyticsProvider` / bootstrap do app), nao de cada classe `*Tag`; no CSV usam placeholders fixos para eng implementar no provider.
 
 ```json
 {
@@ -22,7 +22,7 @@ Fonte de verdade para a migracao do inventario legado (`TAGUEAMENTO_LEGADO_CT.*`
   "events": [{
     "name": "interaction_divulgar",
     "params": {
-      "cd_interaction_detail": "share_catalog:boticario"
+      "cd_interaction_detail": "share:catalog-boticario"
     }
   }]
 }
@@ -30,8 +30,8 @@ Fonte de verdade para a migracao do inventario legado (`TAGUEAMENTO_LEGADO_CT.*`
 
 | Campo | Regra |
 |-------|--------|
-| `client_id` | Identificador estavel do usuario (ex.: codigo da revendedora) |
-| `session_id` | Identificador da sessao atual |
+| `client_id` | Placeholder `[[identificador-unico-usuario]]` no CSV; em runtime = codigo estavel da revendedora |
+| `session_id` | Placeholder `[[identificador-unico-sessao]]` no CSV; em runtime = identificador da sessao atual |
 | `events` | Um ou mais hits por chamada ao provider |
 
 ---
@@ -64,19 +64,102 @@ Novos agrupamentos exigem aprovacao do PM — evitar explosao de `interaction_*`
 | Prioridade `{contexto}` | 1) `eventLabel` legado → 2) `acao_legado` ("Toca no botao: …") → 3) slug da tela/tag | |
 | Exemplos | `click:button-ver-mais`, `open:catalog-boticario`, `download:button-baixa-a-imagem` |
 | Proibido | `unknown`, `unkown` ou placeholders genericos — usar `revisar_pm` se faltar contexto |
+| `eventAction: dinamico` no inventario | Placeholder do extrator: label vem de `FormatterHelper.toAnalyticsFormat(...)` em runtime. **Nao** traduzir para `dynamic-content-*`. Preservar variavel no `{contexto}` (ex.: `click:card-${formatterhelper.toanalyticsformat(label)}`). Linhas agregadas duplicadas → `inventario_agregado` / remover |
+| Label generico + categoria especifica | Se `eventLabel` e generico (`selecionar`, `confirmar`, `fechar`, …) e o **ultimo segmento** de `eventCategory` estende o label (ex.: `selecionar-produto`), usar o tail como `{contexto}` → `click:button-selecionar-produto` |
 
 ### 2.3 Dimensoes adicionais (`cd_*`)
 
 - Padrao de nome: `cd_<nome_da_dimensao>` (snake_case).
 - **Limite do projeto:** maximo **100 CDs** no property GA4 — usar o minimo possivel.
-- Preferir condensar contexto em `cd_interaction_detail` antes de criar nova CD.
+- Preferir condensar contexto em `cd_interaction_detail` antes de **criar CD nova**.
+- **Obrigatorio no de-para:** se o codigo legado **ja dispara** uma `cd_*` em producao, ela **deve** aparecer em `json_novo` (`events[].params`) na linha correspondente do `TAGUEAMENTO_MIGRADO_CT.csv`. Nao omitir — eng implementa a partir do CSV.
+- Quando contexto couber em `cd_interaction_detail` (< 100 chars) **e** nao existia CD separada no legado, nao criar CD extra.
+- Inventario de CDs faltantes: [`output/LACUNAS_CD.md`](../output/LACUNAS_CD.md).
+- **Variaveis de negocio no legado** (`$brand`, `$sku`, `$quantity`, `$saleId`, …) devem virar `cd_*` em `json_novo` quando o codigo ou o label legado carrega contexto separado (ex.: `cd_brand`, `cd_sku`, `cd_quantity`, `cd_id_venda`). Preservar placeholder runtime: `"cd_brand": "$brand"`.
 
-### 2.4 Migracao a partir do legado UA
+Exemplo (catalogo + marca):
+
+```json
+{
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "interaction_divulgar",
+    "params": {
+      "cd_interaction_detail": "share:catalog-{brand}",
+      "cd_brand": "$brand"
+    }
+  }]
+}
+```
+
+Exemplo (callback estoque):
+
+```json
+{
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "callback_estoque_add_product_error",
+    "params": {
+      "cd_error_message": "add-product-failed",
+      "cd_quantity": "$quantity",
+      "cd_sku": "$sku"
+    }
+  }]
+}
+```
+
+### 2.4 Pageviews (`screen_view`)
+
+Eventos de visualizacao de tela **mantem** o nome GA4/Firebase `screen_view`. Parametros obrigatorios em `events[].params`:
+
+| Parametro | Regra |
+|-----------|--------|
+| `screen_name` | Path da rota (ex.: `/app-rev/divulgar/catalogos`) — mesmo valor enviado por `setCurrentScreen` / `meta.tag`; preservar placeholders runtime (`$screen`, `${screenTitle}`, …) |
+| `cd_page_title` | Titulo legivel da tela para analise; variavel runtime quando o path e dinamico (ex.: `${screenTitle}`, `${sectionName}`) ou texto derivado de `contexto_legado` / `acao_legado` quando estatico |
+| `cd_section` | Opcional — galeria de materiais quando `screen_name` inclui `$sectionName` |
+
+**Obrigatorio no CSV:** linhas `manter` e `adicionar_pageview` devem ter `json_novo` com envelope completo, `screen_name` **e** `cd_page_title` em `events[].params`. Coluna **`nome_pageview`** = copia legivel de `screen_name` (rota/path) para filtro rapido no CSV.
+
+Exemplo (pageview estatico):
+
+```json
+{
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "screen_view",
+    "params": {
+      "screen_name": "/app-rev/divulgar/catalogos-erro",
+      "cd_page_title": "Catalogos digitais - lista de catalogos do ciclo para abrir PDF ou compartilhar link"
+    }
+  }]
+}
+```
+
+Exemplo (pageview dinamico):
+
+```json
+{
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "screen_view",
+    "params": {
+      "screen_name": "/app-rev/conteudo/novidade/${FormatterHelper.toLowerHyphenated(screenTitle)}",
+      "cd_page_title": "${screenTitle}"
+    }
+  }]
+}
+```
+
+### 2.5 Migracao a partir do legado UA
 
 | Legado | Novo |
 |--------|------|
 | `event` + `eventCategory` + `eventAction` + `eventLabel` | `interaction_<grupo>` + `cd_interaction_detail` |
-| `screen_view` / `setCurrentScreen` | **`manter`** — ja no padrao GA4; status `manter`, criterio `pageview_ok` (nao `migrar`) |
+| `screen_view` / `setCurrentScreen` | **`manter`** — envelope GA4 + `screen_view` + `screen_name` + `cd_page_title`; status `manter`, criterio `pageview_ok` (nao `migrar`) |
 | Novo `screen_view` (lacuna) | status `adicionar_pageview` |
 | Eventos de comercio (`logPurchase`, `logViewItemList`, …) | Eventos recomendados Firebase — fora deste contrato |
 
@@ -88,38 +171,51 @@ Callbacks de resultado (API, persistencia, operacao assincrona) **nao** usam `in
 
 ### 3.1 Sucesso
 
+- `name`: `callback_<dominio>_<keyword>_success`
+- `keyword`: snake_case ingles, verbo de negocio (`add_product`, `edit_sale`, `financial_report`)
+- `dominio`: slug do dominio C&T no nome do evento (`estoque`, `vendas`, `gestao`) — derivado de `dominio_ct` / tag
+
+Exemplo estoque:
+
 ```json
 {
-  "name": "callback_add_product_success",
-  "params": {}
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "callback_estoque_add_product_success",
+    "params": {}
+  }]
 }
 ```
 
-- `name`: `callback_<keyword>_success`
-- `keyword`: snake_case ingles, verbo de negocio (`add_product`, `edit_sale`, `financial_report`)
+Legado `callback:adicionar-produto` + tag `create_stock_tag` → `callback_estoque_add_product_success|error`.
 
 ### 3.2 Erro
 
 ```json
 {
-  "name": "callback_add_product_error",
-  "params": {
-    "cd_error_message": "add-product-failed"
-  }
+  "client_id": "[[identificador-unico-usuario]]",
+  "session_id": "[[identificador-unico-sessao]]",
+  "events": [{
+    "name": "callback_estoque_add_product_error",
+    "params": {
+      "cd_error_message": "add-product-failed"
+    }
+  }]
 }
 ```
 
-- `name`: `callback_<keyword>_error`
+- `name`: `callback_<dominio>_<keyword>_error`
 - `cd_error_message`: codigo kebab-case curto em ingles
 
 ### 3.3 Migracao a partir do legado
 
 | Legado | Novo |
 |--------|------|
-| `eventAction: callback:adicionar-produto`, label sucesso | `callback_add_product_success` |
-| `eventAction: callback:adicionar-produto`, label erro | `callback_add_product_error` + `cd_error_message` |
-| `eventAction: callback:auto_save_sale`, label sucesso | `callback_auto_save_sale_success` |
-| `eventAction: callback:relatorio-financeiro`, label erro | `callback_financial_report_error` + `cd_error_message` |
+| `eventAction: callback:adicionar-produto`, label sucesso | `callback_estoque_add_product_success` |
+| `eventAction: callback:adicionar-produto`, label erro | `callback_estoque_add_product_error` + `cd_error_message` |
+| `eventAction: callback:auto_save_sale`, label sucesso | `callback_vendas_auto_save_sale_success` |
+| `eventAction: callback:relatorio-financeiro`, label erro | `callback_gestao_financial_report_error` + `cd_error_message` |
 
 ---
 

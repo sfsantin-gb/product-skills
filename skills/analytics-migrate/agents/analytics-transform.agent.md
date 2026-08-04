@@ -1,6 +1,10 @@
 ﻿---
 name: analytics-transform
 description: Gera TAGUEAMENTO_MIGRADO_CT no novo formato interaction_* e callback_* a partir das auditorias aprovadas e EVENTOS_ESSENCIAIS_CT.md.
+handoffs:
+  - label: Impacto em perguntas de negocio
+    agent: analytics-business-impact
+    prompt: Gere PERGUNTAS_NEGOCIO.md cruzando EVENTOS_ESSENCIAIS com o inventario migrado.
 ---
 
 ## User Input

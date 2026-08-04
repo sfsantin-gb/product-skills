@@ -13,19 +13,55 @@ Skill do pipeline `@analytics-migrate`. **Roda no megazord_mobile** — Product 
 
 Instalacao estilo Spec Kit: clone o megazord, rode `install-agents.ps1`, abra **somente** este repo no Cursor.
 
-## PM — comece aqui
+## PM — fluxo em 3 etapas
 
 Leia **`tools/analytics-migrate/PM_QUICKSTART.md`**.
 
-Resumo:
+### Etapa 1 — Input do PM (antes do pipeline)
 
-1. Preencher `tools/analytics-migrate/config/dominios-{squad}.md` (template em `templates/dominios-squad.template.md`)
-2. Ajustar `tools/analytics-migrate/analytics-migrate.config.yml`
-3. Rodar discover (script) ou `@analytics-migrate --fase discover`
-4. Validar artefatos em `tools/analytics-migrate/output/` — vereditos `essencial_p0`, `revisar_pm`, `lacuna_pageview`
-5. Aprovar com `@analytics-migrate --aprovar` → `output/MIGRACAO_DECISOES.md`
+| # | Acao | Arquivo |
+|---|------|---------|
+| 1 | Mapear dominios e contextos da squad | `config/dominios-{squad}.md` (template: `templates/dominios-squad.template.md`) |
+| 2 | Indicar **perguntas de negocio principais** (P0/P1) por dominio | `config/perguntas-negocio-{squad}.md` (template: `templates/perguntas-negocio-squad.template.md`) |
+| 3 | Apontar paths no config | `analytics-migrate.config.yml` → `workspace.dominios` + `workspace.perguntas_negocio` |
 
-PM **nao** edita Dart; foco em dominios, prioridades P0/P1 e aprovacao de remocoes.
+### Etapa 2 — Skill (automatico)
+
+```text
+discover.ps1  →  @analytics-migrate --fase all --export-csv  →  apply-migracao-decisoes.ps1 (se decisoes PM)
+```
+
+Artefatos gerados em `tools/analytics-migrate/output/`:
+
+| Artefato | Para o PM |
+|----------|-----------|
+| `RESUMO_DE_PARA.md` | **Numeros gerais** (migrar / remover / manter / novo) |
+| `PERGUNTAS_NEGOCIO.md` | Perguntas respondiveis vs nao — trade-offs da migracao |
+| `TAGUEAMENTO_MIGRADO_CT.csv` | Inventario completo com criterios |
+
+### Etapa 3 — Revisao PM + entrega ENG
+
+| # | Acao | Saida |
+|---|------|-------|
+| 1 | Ler `RESUMO_DE_PARA.md` (contagens) | — |
+| 2 | Revisar `PERGUNTAS_NEGOCIO.md` — preencher coluna **Decisao PM (se discordar)** | Respostas / discordancias |
+| 3 | `@analytics-migrate --aprovar` | `MIGRACAO_DECISOES.md` |
+| 4 | Regenerar entrega (ou rodar apply script) | **`ENTREGA_ENG.csv`** |
+
+**Entrega final para engenharia:** `output/ENTREGA_ENG.csv`
+
+| Coluna | Conteudo |
+|--------|----------|
+| `classificacao` | `novo` (pageview/codigo a criar) · `migrar` · `remover` |
+| `arquivo_tag` | Classe `*_tag.dart` |
+| `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`; reconstruido se vazio nas demais) |
+| `json_novo` | Envelope GA4 alvo (completo) |
+
+Pageviews ok (`manter`) ficam de fora por padrao; `export-entrega-eng.ps1 -IncludeManter` inclui referencia.
+
+Script manual: `powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/export-entrega-eng.ps1`
+
+PM **nao** edita Dart; foco em dominios, perguntas P0/P1, trade-offs e aprovacao de remocoes.
 
 ## Leitura obrigatoria (agente)
 
@@ -51,6 +87,9 @@ analytics-migrate (orquestrador)
   -> analytics-callbacks          -> output/CALLBACKS_MIGRACAO.md
   -> analytics-simplify           -> output/SIMPLIFICACAO_JORNADAS.md
   -> analytics-transform          -> output/TAGUEAMENTO_MIGRADO_CT.md + CSV
+  -> analytics-business-impact     -> output/PERGUNTAS_NEGOCIO.md
+  -> export-entrega-eng.ps1         -> output/ENTREGA_ENG.csv (handoff eng)
+  -> generate-resumo-de-para.ps1    -> output/RESUMO_DE_PARA.md
 ```
 
 CSV de-para: `tools/export_tagueamento_migrado_ct.ps1` (com `--export-csv`).
@@ -92,7 +131,7 @@ Antes de sugerir `remover`, cruzar com `docs/EVENTOS_ESSENCIAIS_CT.md`:
 ### Novo formato
 
 - `interaction_<grupo>` + `cd_interaction_detail` — ver regras abaixo
-- `callback_<keyword>_success` | `callback_<keyword>_error` + `cd_error_message`
+- `callback_<dominio>_<keyword>_success` | `callback_<dominio>_<keyword>_error` + `cd_error_message` (ex.: `callback_estoque_add_product_success`)
 - Max 100 CDs no projeto
 
 ### screen_view (pageview)
@@ -151,12 +190,14 @@ CSV: `templates/*.header.csv` + `tools/export_tagueamento_migrado_ct.ps1`
 | Callbacks | `.github/agents/analytics-callbacks.agent.md` | `output/CALLBACKS_MIGRACAO.md` |
 | Simplificar | `.github/agents/analytics-simplify.agent.md` | `output/SIMPLIFICACAO_JORNADAS.md` |
 | Transformar | `.github/agents/analytics-transform.agent.md` | `output/TAGUEAMENTO_MIGRADO_CT.md` |
+| Impacto negocio | `.github/agents/analytics-business-impact.agent.md` | `output/PERGUNTAS_NEGOCIO.md` |
+| Entrega eng | `scripts/export-entrega-eng.ps1` | `output/ENTREGA_ENG.csv` |
 
 ## Instalacao (primeira vez)
 
 Pre-requisito: **acesso de leitura ao repo megazord_mobile**.
 
-**Catalogo (recomendado):** clone [product-skills](https://github.com/grupoboticario/product-skills) e rode `install.ps1 -Target C:\megazord_mobile`.
+**Catalogo (recomendado):** clone [product-skills](https://github.com/sfsantin-gb/product-skills) e rode `install.ps1 -Target C:\megazord_mobile`.
 
 **Local (Spec Kit):**
 
@@ -171,7 +212,7 @@ Isso copia agentes para `.github/agents/` e a skill para `.github/skills/` + `.c
 
 ### Compartilhar com outra squad
 
-1. Link [product-skills](https://github.com/grupoboticario/product-skills) + [`PM_QUICKSTART.md`](PM_QUICKSTART.md)
+1. Link [product-skills](https://github.com/sfsantin-gb/product-skills) + [`PM_QUICKSTART.md`](PM_QUICKSTART.md)
 2. PM preenche `config/dominios-{squad}.md` e ajusta `analytics-migrate.config.yml`
 3. `install.ps1` → discover → `@analytics-migrate --fase all --export-csv`
 
