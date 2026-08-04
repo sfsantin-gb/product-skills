@@ -76,10 +76,10 @@ $md = @"
 |--------|-----|
 | `classificacao` | `novo` \| `migrar` \| `remover` |
 | `arquivo_tag` | Classe `*_tag.dart` a alterar |
-| `evento_legado_json` | JSON UA/Firebase legado |
+| `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`; reconstruido se vazio nas demais) |
 | `json_novo` | Envelope GA4 completo alvo |
 
-Pageviews ja corretos (`manter`) **nao** entram na entrega eng — eng so implementa `novo`, `migrar` e remove codigo em `remover`.
+Pageviews ja corretos (`manter`) **nao** entram por padrao — use `export-entrega-eng.ps1 -IncludeManter` se precisar referencia.
 
 "@
 

@@ -117,13 +117,14 @@ Ou rode `apply-migracao-decisoes.ps1` (ja chama export + resumo).
 
 **Arquivo para eng:** `output/ENTREGA_ENG.csv`
 
-| classificacao | Significado |
-|---------------|-------------|
-| `novo` | Criar pageview/evento (ex.: lacuna aba financeira) |
-| `migrar` | Alterar tag para `json_novo` |
-| `remover` | Remover disparo legado |
+| Coluna | Significado |
+|--------|-------------|
+| `classificacao` | `novo` · `migrar` · `remover` |
+| `arquivo_tag` | Classe `*_tag.dart` |
+| `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`) |
+| `json_novo` | Envelope GA4 alvo |
 
-Colunas principais: `arquivo_tag`, `evento_legado_json`, `json_novo`.
+Pageviews ok (`manter`) ficam de fora por padrao; use `-IncludeManter` no export se precisar referencia.
 
 ---
 

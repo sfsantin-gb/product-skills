@@ -54,10 +54,10 @@ Artefatos gerados em `tools/analytics-migrate/output/`:
 |--------|----------|
 | `classificacao` | `novo` (pageview/codigo a criar) · `migrar` · `remover` |
 | `arquivo_tag` | Classe `*_tag.dart` |
-| `evento_legado_json` | JSON legado |
+| `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`; reconstruido se vazio nas demais) |
 | `json_novo` | Envelope GA4 alvo (completo) |
 
-Pageviews ja ok (`manter`) **nao** entram na entrega eng.
+Pageviews ok (`manter`) ficam de fora por padrao; `export-entrega-eng.ps1 -IncludeManter` inclui referencia.
 
 Script manual: `powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/export-entrega-eng.ps1`
 
