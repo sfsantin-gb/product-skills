@@ -1,130 +1,142 @@
-﻿# PM Quickstart â€” Analytics Migrate
+# PM Quickstart — Analytics Migrate
 
-Guia de 1 pagina para PMs rodarem a migracao de tagueamento legado â†’ GA4 **somente com o megazord_mobile** â€” Product OS nao e necessario.
+Guia de 1 pagina para PMs rodarem a migracao de tagueamento legado → GA4 **somente com o megazord_mobile** — Product OS nao e necessario.
+
+## Fluxo PM (3 etapas)
+
+```
+[1] INPUT          [2] SKILL                    [3] REVISAO + ENG
+dominios.md   →    discover + pipeline    →     RESUMO_DE_PARA.md (numeros)
+perguntas.md       PERGUNTAS_NEGOCIO.md         preencher respostas PM
+                   TAGUEAMENTO_MIGRADO_CT.csv   --aprovar
+                                                ENTREGA_ENG.csv → eng
+```
+
+---
 
 ## O que voce recebe no final
 
 | Artefato | Para que serve |
 |----------|----------------|
-| `tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_CT.md` / `.csv` | De-para legado â†’ GA4 (entrega para eng) |
-| `tools/analytics-migrate/output/SIMPLIFICACAO_JORNADAS.md` | Eventos P0/P1/P2 e recomendacao manter/remover |
-| `tools/analytics-migrate/output/NAVEGACAO_AUDITORIA.md` | Cliques de navegacao interna candidatos a remocao |
-| `tools/analytics-migrate/output/MIGRACAO_DECISOES.md` | Registro das suas aprovacoes |
-| `matriz_jornadas_maestro.csv` (opcional) | Passos e2e para Maestro â€” ver secao 6 |
+| `output/RESUMO_DE_PARA.md` | **Numeros gerais** — migrar / remover / manter / novo |
+| `output/PERGUNTAS_NEGOCIO.md` | Trade-offs — o que continua mensuravel vs o que se perde |
+| `output/ENTREGA_ENG.csv` | **Entrega eng** — tag + JSON legado + JSON novo + classificacao |
+| `output/TAGUEAMENTO_MIGRADO_CT.csv` | Inventario completo (auditoria / referencia) |
+| `output/MIGRACAO_DECISOES.md` | Registro das suas aprovacoes |
 
-## Pre-requisitos
+---
 
-| Item | Quem | Onde |
-|------|------|------|
-| Clone `megazord_mobile` | PM ou dev | sua maquina |
-| `config/dominios-{squad}.md` | **PM** | `tools/analytics-migrate/config/` |
-| `analytics-migrate.config.yml` | PM | `tools/analytics-migrate/` |
-| Cursor com agente | PM | `@analytics-migrate` |
+## Etapa 1 — Input do PM
 
-## Passo 1 â€” Instalar o pacote (uma vez)
-
-**Opcao A â€” product-skills (recomendado para compartilhar):**
+### 1a. Dominios
 
 ```powershell
-git clone https://github.com/sfsantin-gb/product-skills.git
-git clone https://github.com/grupoboticario/megazord_mobile.git C:\megazord_mobile
-
-cd product-skills
-powershell -ExecutionPolicy Bypass -File install.ps1 -Target C:\megazord_mobile
+copy tools\analytics-migrate\templates\dominios-squad.template.md tools\analytics-migrate\config\dominios-{squad}.md
 ```
 
-**Opcao B â€” Spec Kit (pacote ja no clone do megazord):**
+Referencia C&T: [`config/dominios-ct.md`](config/dominios-ct.md).
+
+### 1b. Perguntas de negocio principais
+
+```powershell
+copy tools\analytics-migrate\templates\perguntas-negocio-squad.template.md tools\analytics-migrate\config\perguntas-negocio-{squad}.md
+```
+
+Liste **perguntas P0/P1** que a squad usa de fato — nao precisa ser exaustivo.
+
+Referencia C&T: [`config/perguntas-negocio-ct.md`](config/perguntas-negocio-ct.md).
+
+### 1c. Config
+
+```powershell
+copy tools\analytics-migrate\analytics-migrate.config.example.yml tools\analytics-migrate\analytics-migrate.config.yml
+```
+
+| Campo | Exemplo |
+|-------|---------|
+| `workspace.dominios` | `tools/analytics-migrate/config/dominios-ct.md` |
+| `workspace.perguntas_negocio` | `tools/analytics-migrate/config/perguntas-negocio-ct.md` |
+| `workspace.output_dir` | `tools/analytics-migrate/output` |
+
+---
+
+## Etapa 2 — Instalar + pipeline (skill)
+
+### Instalar (uma vez)
 
 ```powershell
 cd C:\megazord_mobile
 powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\install-agents.ps1
 ```
 
-Isso copia agentes e skills para `.github/` e `.cursor/skills/` do megazord.
-
-## Passo 2 â€” Configurar squad
-
-Se ainda nao existir, copie o exemplo:
-
-```powershell
-copy tools\analytics-migrate\analytics-migrate.config.example.yml tools\analytics-migrate\analytics-migrate.config.yml
-```
-
-Edite:
-
-| Campo | Exemplo C&T |
-|-------|-------------|
-| `squad.github_team` | `vd-sellout-conteudos-e-trafego-mld` |
-| `workspace.dominios` | `tools/analytics-migrate/config/dominios-ct.md` |
-| `workspace.output_dir` | `tools/analytics-migrate/output` |
-
-Referencia C&T: [`config/dominios-ct.md`](config/dominios-ct.md).  
-Nova squad: copie [`templates/dominios-squad.template.md`](templates/dominios-squad.template.md).
-
-## Passo 3 â€” Discover (inventario legado)
-
-**Opcao A â€” script (recomendado na 1a vez):**
+### Discover
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\discover.ps1
 ```
 
-**Opcao B â€” agente no Cursor** (somente megazord aberto):
-
-```
-@analytics-migrate --fase discover
-```
-
-Confira `tools/analytics-migrate/output/DISCOVER_REPORT.md`.
-
-## Passo 4 â€” Pipeline completo (agente)
+### Pipeline completo (Cursor)
 
 ```
 @analytics-migrate --fase all --export-csv
 ```
 
-Fases na ordem:
+Fases: navigation → coverage → callbacks → simplify → transform → **business-impact**.
 
-1. **navigation** â€” o que e clique in-app duplicado
-2. **coverage** â€” destinos tem pageview?
-3. **callbacks** â€” sucesso/erro de API
-4. **simplify** â€” P0/P1/P2 por dominio
-5. **transform** â€” CSV/MD migrado final
+---
 
-Limite por aba:
+## Etapa 3 — Revisao PM + handoff eng
 
-```
-@analytics-migrate --fase simplify --navbar Divulgar
-```
+### 3a. Numeros gerais
 
-## Passo 5 â€” O que o PM valida
+Abra **`output/RESUMO_DE_PARA.md`**.
 
-Abra `tools/analytics-migrate/output/SIMPLIFICACAO_JORNADAS.md` e `TAGUEAMENTO_MIGRADO_CT.md`.
+### 3b. Perguntas de negocio
 
-| Veredito | Acao do PM |
-|----------|------------|
-| `essencial_p0` | Manter â€” nao remover |
-| `essencial_p1` | Manter salvo decisao explicita |
-| `revisar_pm` | **Voce decide** â€” marcar manter/remover |
-| `nav_duplicada` / `nao_essencial` | Aprovar remocao se concordar |
-| `lacuna_pageview` | Abrir card eng â€” falta PV no destino |
-| `obsoleto` | Aprovar remocao |
+Abra **`output/PERGUNTAS_NEGOCIO.md`**:
 
-Consolide:
+- Leia resumo executivo (% respondivel / parcial / perdido)
+- Preencha **Decisao PM (se discordar)** onde discordar
+- Foque em linhas `nao_respondivel` e `revisar_pm`
+
+### 3c. Aprovar
 
 ```
 @analytics-migrate --aprovar
 ```
 
-Atualiza `tools/analytics-migrate/output/MIGRACAO_DECISOES.md`.
+Atualiza `MIGRACAO_DECISOES.md` e regenera CSV se necessario.
 
-## Passo 6 â€” Jornadas Maestro (opcional)
+### 3d. Entrega eng
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\generate-matriz-jornadas-maestro.ps1
+powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\export-entrega-eng.ps1
 ```
 
-Saida: `matriz_jornadas_maestro.csv` na raiz do megazord.
+Ou rode `apply-migracao-decisoes.ps1` (ja chama export + resumo).
+
+**Arquivo para eng:** `output/ENTREGA_ENG.csv`
+
+| classificacao | Significado |
+|---------------|-------------|
+| `novo` | Criar pageview/evento (ex.: lacuna aba financeira) |
+| `migrar` | Alterar tag para `json_novo` |
+| `remover` | Remover disparo legado |
+
+Colunas principais: `arquivo_tag`, `evento_legado_json`, `json_novo`.
+
+---
+
+## O que validar no inventario completo
+
+| Veredito | Acao do PM |
+|----------|------------|
+| `essencial_p0` | Manter — nao remover |
+| `revisar_pm` | **Voce decide** |
+| `nav_duplicada` / `nao_essencial` | Aprovar remocao se concordar |
+| `lacuna_pageview` | Card eng — falta PV no destino |
+
+---
 
 ## Invocacao rapida
 
@@ -132,26 +144,12 @@ Saida: `matriz_jornadas_maestro.csv` na raiz do megazord.
 |----------|---------|
 | Primeira vez | `install-agents.ps1` + discover |
 | Migracao completa | `@analytics-migrate --fase all --export-csv` |
-| So priorizacao PM | `@analytics-migrate --fase simplify` |
-| So navegacao | `@analytics-migrate --fase navigation` |
+| Trade-offs negocio | `@analytics-migrate --fase business-impact` |
 | Aprovar decisoes | `@analytics-migrate --aprovar` |
-| Jornadas e2e | `generate-matriz-jornadas-maestro.ps1` |
+| Gerar planilha eng | `export-entrega-eng.ps1` |
 
-## Documentacao de referencia
-
-Tudo em `tools/analytics-migrate/`:
+## Documentacao
 
 - [`docs/REGRAS_FORMATO_NOVO.md`](docs/REGRAS_FORMATO_NOVO.md)
-- [`docs/EVENTOS_ESSENCIAIS_CT.md`](docs/EVENTOS_ESSENCIAIS_CT.md)
-- [`docs/CRITERIO_RELEVANCIA.md`](docs/CRITERIO_RELEVANCIA.md)
+- [`WORKFLOW.md`](WORKFLOW.md)
 - [`PIPELINE_COMPLETO.md`](PIPELINE_COMPLETO.md)
-- [`README.md`](README.md)
-
-## Compartilhar com outra squad
-
-1. Envie link do megazord + este quickstart
-2. Rode `install-agents.ps1` no clone local
-3. PM preenche `config/dominios-{squad}.md` + ajusta `analytics-migrate.config.yml`
-4. Discover â†’ pipeline â†’ aprovacao PM
-
-Nao precisa de Product OS â€” basta o megazord e o time mapeado no CODEOWNERS.

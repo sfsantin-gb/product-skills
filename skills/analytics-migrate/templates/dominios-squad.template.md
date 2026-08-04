@@ -53,4 +53,5 @@ Opcional em contexto:
 - [ ] Cada `###` mapeia para fluxo reconhecivel no app
 - [ ] Todo subdominio tem bloco `> **Contexto:**`
 - [ ] `analytics-migrate.config.yml` aponta para este arquivo em `workspace.dominios`
-- [ ] `squad.github_team` bate com CODEOWNERS do megazord
+- [ ] Perguntas P0/P1 preenchidas em `config/perguntas-negocio-{squad}.md`
+- [ ] `workspace.perguntas_negocio` no config aponta para o arquivo de perguntas

@@ -60,6 +60,7 @@ O megazord e **leitura** para o agente (como o SDD le o repo para gerar spec). P
 |-------|-----|
 | `TAGUEAMENTO_MIGRADO_CT.csv` | De-para legado → GA4 |
 | `SIMPLIFICACAO_JORNADAS.md` | P0/P1/P2 — PM decide |
+| `PERGUNTAS_NEGOCIO.md` | Perguntas respondiveis vs nao respondiveis — trade-off PM |
 | `MIGRACAO_DECISOES.md` | Log de aprovacao PM |
 | `NAVEGACAO_AUDITORIA.md` | O que remover |
 

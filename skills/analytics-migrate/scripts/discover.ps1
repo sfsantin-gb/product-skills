@@ -25,6 +25,7 @@ function Resolve-WorkspacePath {
 }
 . (Join-Path $PSScriptRoot 'parse-codeowners.ps1')
 . (Join-Path $PSScriptRoot 'parse-dominios.ps1')
+. (Join-Path $PSScriptRoot 'parse-perguntas-negocio.ps1')
 . (Join-Path $PSScriptRoot 'extract-tags.ps1')
 . (Join-Path $PSScriptRoot 'parse-guia-escopo.ps1')
 
@@ -47,6 +48,7 @@ function Read-YamlConfig {
         megazord_root = Get-YamlValue 'root'
         codeowners    = Get-YamlValue 'codeowners'
         dominios      = Get-YamlValue 'dominios'
+        perguntas_negocio = Get-YamlValue 'perguntas_negocio'
         output_dir    = Get-YamlValue 'output_dir'
         guia_escopo   = Get-YamlValue 'guia_escopo'
         scope_mode    = if ($raw -match 'scope_mode:\s*(\w+)') { $matches[1] } else { 'merge' }
@@ -86,6 +88,8 @@ $codeownersPath = Join-Path $megazord ($cfg.codeowners -replace '^/', '' -replac
 $dominiosRel = if ($cfg.dominios) { $cfg.dominios } else { "tools/analytics-migrate/config/dominios-$squad.md" }
 $outputRel = if ($cfg.output_dir) { $cfg.output_dir } else { "tools/analytics-migrate/output" }
 $dominiosPath = Resolve-WorkspacePath -Root $megazord -RelativePath $dominiosRel
+$perguntasRel = if ($cfg.perguntas_negocio) { $cfg.perguntas_negocio } else { "tools/analytics-migrate/config/perguntas-negocio-$squad.md" }
+$perguntasPath = Resolve-WorkspacePath -Root $megazord -RelativePath $perguntasRel
 $outputDir = Resolve-WorkspacePath -Root $megazord -RelativePath $outputRel
 
 $squadUpper = $squad.ToUpper()
@@ -100,6 +104,7 @@ Write-Host "=== analytics-migrate discover ===" -ForegroundColor Cyan
 Write-Host "Squad: $squad ($team)"
 Write-Host "Megazord: $megazord"
 Write-Host "Dominios: $dominiosPath"
+Write-Host "Perguntas negocio: $perguntasPath"
 Write-Host "Output: $outputDir"
 
 $ownerEntries = Parse-Codeowners -CodeownersPath $codeownersPath -GithubTeam $team
@@ -126,6 +131,7 @@ Write-Host "Escopos CODEOWNERS: $($scopePaths.Count) pastas"
 
 $extract = Extract-TagsFromScope -MegazordRoot $megazord -ScopePaths $scopePaths
 $domains = Parse-DominiosMarkdown -DominiosPath $dominiosPath
+$perguntas = Parse-PerguntasNegocioMarkdown -PerguntasPath $perguntasPath
 
 Write-Host "Arquivos tag: $($extract.files_scanned)"
 Write-Host "Eventos extraidos: $($extract.event_count)"
@@ -159,6 +165,7 @@ $scopeLines = @(
     "| Arquivos tag | $($extract.files_scanned) |",
     "| Eventos legado | $($extract.event_count) |",
     "| Dominios PM | $($domains.Count) |",
+    "| Perguntas negocio PM | $($perguntas.Count) |",
     "",
     "## Pastas (CODEOWNERS)",
     "",
@@ -173,9 +180,11 @@ $scopeLines += @(
     "",
     "## Proximo passo",
     "",
-    "1. PM revisar ``EVENTOS_ESSENCIAIS_$squadUpper.md`` (perguntas norte por dominio)",
-    "2. Rodar ``@analytics-migrate --fase navigation``",
-    "3. Pipeline completo: ``--fase all``"
+    "1. PM revisar ``$perguntasRel`` (perguntas P0/P1 prioritarias)",
+    "2. PM revisar ``EVENTOS_ESSENCIAIS_$squadUpper.md`` (rascunho por dominio)",
+    "3. Rodar ``@analytics-migrate --fase all --export-csv``",
+    "4. Revisar ``RESUMO_DE_PARA.md`` + ``PERGUNTAS_NEGOCIO.md`` → ``@analytics-migrate --aprovar``",
+    "5. Entregar ``ENTREGA_ENG.csv`` para engenharia"
 )
 $scopeLines | Set-Content $scopeMd -Encoding UTF8
 
@@ -195,7 +204,14 @@ $essLines = @(
 )
 foreach ($d in $domains) {
     $ctx = if ($d.context) { $d.context } else { $d.subdomains }
-    $essLines += "| $($d.name) | $ctx | *PM: qual decisao esta area habilita?* | PV + interaction/callback a definir |"
+    $domainQuestions = @($perguntas | Where-Object { $_.dominio -eq $d.name })
+    if ($domainQuestions.Count -gt 0) {
+        foreach ($pq in $domainQuestions) {
+            $essLines += "| $($d.name) | $ctx | $($pq.pergunta) | $($pq.indicador) |"
+        }
+    } else {
+        $essLines += "| $($d.name) | $ctx | *PM: qual decisao esta area habilita?* | PV + interaction/callback a definir |"
+    }
 }
 if ($domains.Count -eq 0) {
     $essLines += "| *Dominio exemplo* | | RE usa esta area? | screen_view + interaction_* |"
@@ -257,6 +273,9 @@ if ($shared.Count -gt 0) {
 }
 if (-not (Test-Path $dominiosPath)) {
     $discoverReport += "- **dominios.md ausente**. Crie ``$dominiosRel`` antes de simplificar/transform."
+}
+if (-not (Test-Path $perguntasPath)) {
+    $discoverReport += "- **perguntas-negocio ausente**. Copie ``templates/perguntas-negocio-squad.template.md`` para ``$perguntasRel``."
 }
 $discoverReport | Set-Content $discoverMd -Encoding UTF8
 
