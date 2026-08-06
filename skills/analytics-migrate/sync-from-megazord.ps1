@@ -18,7 +18,7 @@ if (-not (Test-Path $src)) { throw "Nao encontrado: $src" }
     }
 }
 
-Copy-Item (Join-Path $src 'skills\analytics-migrate\SKILL.md') (Join-Path $dest 'SKILL.md') -Force
+Copy-Item (Join-Path $src 'SKILL.md') (Join-Path $dest 'SKILL.md') -Force
 @(
     'PM_QUICKSTART.md', 'WORKFLOW.md', 'PIPELINE_COMPLETO.md', 'CASE.md',
     'analytics-migrate.config.example.yml', 'README.md', 'INSTALACAO_SKILLS_CORPORATIVAS.md'

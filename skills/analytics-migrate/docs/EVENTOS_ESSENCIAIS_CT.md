@@ -14,11 +14,79 @@
 |--------|-------------|
 | **Pergunta de saude** | O que o time precisa saber para agir |
 | **Eventos essenciais** | Minimo para responder a pergunta (formato migrado) |
-| **Tipo** | `PV` pageview · `INT` interaction_* · `CB` callback_* |
+| **Tipo** | `PV` pageview · `INT` interaction_* · `CB` callback_* · `ECOM` evento recomendado GA4 (e-commerce / search) |
 | **Repo APP** | Microapp em `megazord_mobile` |
 | **Repo relacionado** | Outros repos do time (backend/portal) para correlacao ops |
 
-**Regra:** pageview cobre *chegada na tela*; interaction cobre *intencao/acao*; callback cobre *resultado de operacao*.
+**Regra geral:** pageview cobre *chegada na tela*; interaction cobre *intencao/acao de UI*; callback cobre *resultado de operacao*; **e-commerce avancado** cobre *somente* jornadas em que a RE **tem intencao de comprar ou esta comprando** produtos (checkout / pagamento / conclusao de compra).
+
+### Preferencia: e-commerce avancado vs interaction/callback
+
+| Situacao | Preferir |
+|----------|----------|
+| RE **tem intencao de comprar ou esta realizando a compra** de produtos (carrinho de compra, checkout, pagamento, `purchase`, promocao/busca **nesse** funil) | **`ECOM`** — eventos GA4 da [secao 3 de `REGRAS_FORMATO_NOVO.md`](./REGRAS_FORMATO_NOVO.md) |
+| **Sellout → compra de estoque:** a partir de uma **venda ja registrada**, RE adiciona produtos ao **carrinho de compra** para adquirir o estoque necessario e entregar ao cliente final | **`ECOM`** (`add_to_cart` → … → `purchase`) — e funil de compra do usuario do app |
+| RE **cadastra / edita no app** produtos **ja comprados** (gestao de estoque, “adicionar ao estoque”, card SKU, editar preco, excluir do estoque) | **`INT` / `CB`** — **nao** e ECOM |
+| RE **vende / cobra / registra venda sellout** ao cliente (inclui adicionar SKU **a venda**) | `INT` / `CB` (`interaction_gestao`, `callback_vendas_*`) — **nao** ECOM |
+| Share, openUrl, navegacao de gestao, hub, relatorios | `INT` / `PV` |
+| Frete no **header** (selecao de frete com intencao de compra / envio) | `ECOM` `add_shipping_info` (so `currency` + `shipping_tier`) |
+
+**Anti-padrao (nao confundir):**
+
+- Informar no app produtos que a RE **ja comprou** (cadastro de estoque) → `INT`/`CB`, **nao** ECOM
+- Adicionar produto **na venda do cliente** → `INT`/`CB`, **nao** ECOM
+- Adicionar produto **no carrinho de compra** (para repor estoque e entregar a venda) → **ECOM**
+
+Contrato completo dos 13 eventos: [`REGRAS_FORMATO_NOVO.md` §3](./REGRAS_FORMATO_NOVO.md).
+
+---
+
+## Catalogo P0 — e-commerce avancado (intencao / compra real)
+
+Usar **apenas** quando a jornada for de **compra** (a RE pretende adquirir ou esta adquirindo produtos agora) — incluindo o atalho **Sellout → carrinho de compra de estoque**. **Nao** usar quando estiver so registrando no estoque o que ja comprou, nem quando estiver montando a venda do cliente. Nomes oficiais GA4 — **nao** renomear para `interaction_*`.
+
+| Tipo | Evento GA4 | Pergunta de saude que responde | Params C&T (resumo) |
+|------|------------|--------------------------------|---------------------|
+| ECOM | `view_item_list` | RE visualiza lista/categoria **no funil de compra**? | `items`, `item_list_id` / `item_list_name`, `currency`* |
+| ECOM | `select_item` | RE seleciona um SKU **para comprar**? | `items`, `item_list_id` / `item_list_name` |
+| ECOM | `view_item` | RE abre detalhe do produto **antes de comprar**? | `items`, `currency`*, `value`*, **`item_list_name`** |
+| ECOM | `add_to_wishlist` | RE salva produto em wishlist **no contexto de compra**? | `items`, `currency`*, `value`*, **`item_list_name`** |
+| ECOM | `add_to_cart` | RE adiciona produto ao **carrinho de compra** (incl. a partir de uma venda sellout)? | `items`, `currency`*, `value`*, **`item_list_name`** |
+| ECOM | `remove_from_cart` | RE remove produto desse **carrinho de compra**? | `items`, `currency`*, `value`*, **`item_list_name`** |
+| ECOM | `begin_checkout` | RE inicia checkout da compra? | `items`, `currency`*, `value`*, `coupon` |
+| ECOM | `add_shipping_info` | RE escolhe frete (header / checkout de compra)? | **somente** `currency` + `shipping_tier` (sem `items`) |
+| ECOM | `add_payment_info` | RE informa pagamento no checkout de compra? | `items`, `currency`*, `value`*, `coupon`, `payment_type` |
+| ECOM | `purchase` | RE **conclui a compra** (reposicao de estoque)? | `items`, `transaction_id` (**obrig.**), `currency`*, `value`*, `coupon`, `shipping`, `tax` |
+| ECOM | `view_promotion` | RE visualiza promocao **no funil de compra**? | `creative_*`, `promotion_*` — **sem** `items` |
+| ECOM | `select_promotion` | RE seleciona essa promocao? | `creative_*`, `promotion_*` — **sem** `items` |
+| ECOM | `search` | RE busca produto (termo) **no funil de compra**? | `search_term` (**obrig.**) — sem `items` |
+
+\* Condicional: enviar `currency` sempre que houver `value`. Moeda tipica: `BRL`.
+
+**Funil minimo P0 (somente compra real):**
+
+```
+view_item_list → select_item → view_item
+       → add_to_cart / remove_from_cart
+       → begin_checkout → add_payment_info → purchase
+(+ search quando houver campo de busca com termo)
+(+ view_promotion / select_promotion quando houver criativo)
+(+ add_shipping_info no header, se aplicavel a compra/envio)
+```
+
+**Origem Sellout (caso C&T):**
+
+```
+Venda sellout registrada (INT/CB)
+  → CTA "adicionar produtos ao carrinho" (compra de estoque p/ entrega)
+  → add_to_cart → … → purchase   ← ECOM daqui em diante
+```
+
+**Nao usar este catalogo para:**
+
+- Cadastrar no estoque produtos **ja comprados** (`adicionar-ao-estoque`, gestao de SKU/preco, callbacks de inventario sem checkout)
+- Montar/editar a **venda do cliente** (`adicionar-produto-a-venda`, `selecionar-produto` na venda, `callback_vendas_*`) → `INT`/`CB` (secao 9)
+- Share de MLD/catalogo, cobranca, parcelas → `INT`/`CB`
 
 ---
 
@@ -33,8 +101,8 @@
 | Carteira clientes | Carteira ativa e crescendo? | PV clientes, add/edit customer, CB | `customer_management` |
 | Divulgar produtos | RE indica produto ao cliente? | showcase, share produto, PV vitrine | `customer_management`, `oraculo` |
 | Carrinho abandonado | RE recupera sacola? | PV card Divulgar, share sacola | `contents`, `customer_management` |
-| Estoque RE | RE gerencia pronta-entrega? | PV estoque, CB add/edit product, share RE | `stock_management` |
-| Vendas sellout | RE registra e cobra vendas? | PV vendas, CB create_sale, charge link | `sales_management` |
+| Estoque RE | RE gerencia estoque e/ou **compra** reposicao? | PV + INT/CB inventario; **ECOM** no funil de compra (incl. a partir de venda) | `stock_management` |
+| Vendas sellout | RE registra/cobra vendas e pode **repor estoque** via carrinho? | PV + CB create_sale + charge; **ECOM** se CTA for carrinho de compra p/ entrega | `sales_management` |
 | Gestao / Relatorio | RE entende saude do negocio? | PV hub/relatorio, CB financial_report_error | `business_management` |
 | Tarefas | RE executa missoes diarias? | PV missions, conclusao tarefa | `customer_management` |
 | Aquisicao CF | RE aparece nas buscas? | PV recomendacao, opt-in busca | `recommendation` |
@@ -161,13 +229,56 @@
 **Dominio:** Experiencia Gestao de Ativos (Estoque RE)
 **Repo:** `stock_management`
 
+**Regra de formato (evitar confusao):**
+
+| Gesto da RE | Formato |
+|-------------|--------|
+| **Intencao / compra real** (carrinho → checkout → `purchase`), inclusive a partir de uma venda sellout | **`ECOM`** — catalogo acima + [`REGRAS_FORMATO_NOVO.md` §3](./REGRAS_FORMATO_NOVO.md) |
+| **Cadastro / gestao** no app de produtos **ja comprados** (adicionar ao estoque, card SKU, editar preco, excluir, callbacks de inventario) | **`INT` / `CB`** — **nunca** `add_to_cart` / `purchase` / `view_item*` |
+| Share MLD / pronta-entrega | `interaction_gestao` share_* |
+
+### Funil essencial — gestao de estoque (cadastro de ja comprados)
+
+```
+PV gestao-de-estoque
+  → INT adicionar/editar/excluir produto no estoque
+  → CB callback_estoque_add_product_* / edit_product_*
+  → INT share pronta-entrega (opcional)
+```
+
 | Pergunta | Eventos essenciais |
 |----------|-------------------|
 | RE acessa estoque? | PV `/app-rev/gestao-de-estoque` |
-| RE adiciona produto ao estoque? | INT modal + `callback_add_product_success` / `callback_add_product_error` |
-| RE edita item RE? | `callback_edit_product_success` / `callback_edit_product_error` |
+| RE cadastra produto **ja comprado** no estoque? | `interaction_gestao` + `callback_estoque_add_product_success\|error` |
+| RE edita / exclui item do estoque? | `interaction_gestao` + `callback_estoque_edit_product_*` (ou INT de confirmacao) |
 | RE compartilha pronta-entrega pos-sucesso? | `interaction_gestao` / `share_mld:after_sale` |
-| Fluxo sell-in/sell-out? | PV `/gestao-de-estoque/sellin-sellout` + PV sucesso |
+| Fluxo sell-in/sell-out (tela de gestao de inventario)? | PV + INT/CB de inventario — **sem** ECOM se nao houver checkout |
+
+### Funil essencial — compra real (reposicao de estoque)
+
+Inclui o caso em que a RE, **a partir de uma venda sellout**, adiciona produtos ao **carrinho de compra** para adquirir o estoque e entregar ao cliente:
+
+```
+(venda sellout = INT/CB)
+  → add_to_cart (produtos da venda → carrinho de compra)
+  → remove_from_cart (se ajustar)
+  → begin_checkout → add_payment_info → purchase
+(+ view_item_list / select_item / view_item / search se houver UI de catalogo nesse fluxo)
+```
+
+| Pergunta | Eventos essenciais |
+|----------|-------------------|
+| RE adiciona ao **carrinho de compra** (p/ repor estoque / entregar venda)? | `add_to_cart` (+ `item_list_name`, `items`) |
+| RE remove do carrinho de compra? | `remove_from_cart` |
+| RE conclui a compra de estoque? | `begin_checkout` → `add_payment_info` → `purchase` (`transaction_id`) |
+
+**Nao confundir:**
+
+| Gesto | Formato |
+|-------|--------|
+| Adicionar SKU **na venda do cliente** | `INT`/`CB` (secao 9) |
+| Adicionar SKU **no carrinho de compra** (reposicao p/ entrega) | **ECOM** |
+| Cadastrar no estoque o que **ja comprou** | `INT`/`CB` |
 
 ---
 
@@ -176,7 +287,14 @@
 **Dominio:** Experiencia Venda APP, Gestao de Vendas, Registro e comprovacao
 **Repos:** `sales_management` · `vd-sellout-voldemort` (BFF)
 
-### Funil essencial
+**Formato misto:**
+
+| Trecho da jornada | Formato |
+|-------------------|--------|
+| Registrar / editar / cobrar **venda ao cliente** | `INT` / `CB` — **nao** ECOM |
+| A partir da venda, **adicionar produtos ao carrinho de compra** para repor estoque e entregar | **`ECOM`** a partir desse CTA (secao 8 + catalogo) |
+
+### Funil essencial — venda ao cliente
 
 ```
 PV minhas-vendas → INT adicionar venda → CB create_sale_success
@@ -187,12 +305,15 @@ PV minhas-vendas → INT adicionar venda → CB create_sale_success
 | Pergunta | Eventos essenciais |
 |----------|-------------------|
 | RE acessa vendas? | PV `/app-rev/gerenciar-vendas` |
-| RE cria venda? | `callback_create_sale_success` / `callback_create_sale_error` |
-| RE salva rascunho? | `callback_auto_save_sale_success` / `callback_auto_save_sale_error` |
+| RE cria venda? | `callback_vendas_create_sale_success` / `callback_vendas_create_sale_error` |
+| RE salva rascunho? | `callback_vendas_auto_save_sale_success` / `callback_vendas_auto_save_sale_error` |
 | RE gera link cobranca? | `interaction_gestao` / `click_button:generate_charge_link:{type}` |
 | RE organiza vendas (novato)? | PV `/gestao-de-vendas/organizar-vendas` |
+| RE, a partir da venda, compra estoque p/ entregar? | **ECOM** `add_to_cart` → … → `purchase` (nao `interaction_gestao`) |
 
-**Nao mensurar:** `voltar-para-*`, `ir-para-menu-*` entre telas do funil (removidos).
+**Nao mensurar:** `voltar-para-*`, `ir-para-menu-*` entre telas do funil de venda (removidos).
+
+**Labels legados tipicos do ponte Sellout → ECOM:** `adicionar-produtos-ao-carrinho` / `adicionar-produtos-ao-carrinho:$saleId` (quando o destino e o **carrinho de compra** de estoque, nao o carrinho da venda).
 
 ---
 
@@ -273,7 +394,7 @@ PV minhas-vendas → INT adicionar venda → CB create_sale_success
 | **Conteudo** | PV LPs · open_content por secao |
 | **Clientes** | PV hub · novos clientes (CB/intencao) · taxa erro callback |
 | **Vendas** | PV vendas · create_sale_success rate · auto_save errors |
-| **Estoque RE** | PV estoque · add_product success rate |
+| **Estoque RE** | PV estoque · INT/CB inventario · ECOM **apenas** se existir checkout de compra real |
 | **Financeiro** | PV relatorio · financial_report_error rate · **PV aba financeira** (pos-lacuna) |
 | **Trafego MLD** | shares na Home vs Divulgar |
 
@@ -283,7 +404,7 @@ PV minhas-vendas → INT adicionar venda → CB create_sale_success
 
 1. PM validar perguntas norte por dominio (este doc)
 2. Cruzar com `TAGUEAMENTO_MIGRADO_CT.csv` — marcar gaps (`status != migrar`)
-3. Implementar lacunas P0: aba financeira, normalizar `add_customer`
-4. `@analytics-plan` para eventos novos fora do inventario legado
+3. Implementar lacunas P0: aba financeira; normalizar callbacks de estoque/cliente
+4. `@analytics-plan` para eventos novos — usar `ECOM` **somente** se a jornada for intencao/compra real (nao cadastro de estoque)
 
-**Referencias:** [`CRITERIO_RELEVANCIA.md`](./CRITERIO_RELEVANCIA.md) · [`GUIA_CONTEXTOS_TAGUEAMENTO_CT.md`](./GUIA_CONTEXTOS_TAGUEAMENTO_CT.md)
+**Referencias:** [`REGRAS_FORMATO_NOVO.md`](./REGRAS_FORMATO_NOVO.md) (§3 e-commerce) · [`CRITERIO_RELEVANCIA.md`](./CRITERIO_RELEVANCIA.md) · [`GUIA_CONTEXTOS_TAGUEAMENTO_CT.md`](./GUIA_CONTEXTOS_TAGUEAMENTO_CT.md)
