@@ -4,26 +4,41 @@ description: >-
   Migra tagueamento legado (megazord_mobile) para interaction_* e callback_*
   com auditoria de navegacao, cobertura de pageview e simplificacao. Use quando
   mencionar migracao de tagueamento, TAGUEAMENTO_LEGADO, analytics-migrate,
-  remover eventos de navegacao ou novo formato GA4. PMs: comece por PM_QUICKSTART.md.
+  --setup, primeira vez, nova squad, remover eventos de navegacao ou novo formato GA4.
+  PMs: comece com @analytics-migrate --setup ou PM_QUICKSTART.md.
 ---
 
 # Analytics Migrate
 
 Skill do pipeline `@analytics-migrate`. **Roda no megazord_mobile** — Product OS nao e necessario.
 
-Instalacao estilo Spec Kit: clone o megazord, rode `install-agents.ps1`, abra **somente** este repo no Cursor.
+Instalacao: [product-skills](https://github.com/sfsantin-gb/product-skills) `install.ps1` **ou** `tools/analytics-migrate/install-agents.ps1`. Abra **somente** o megazord no Cursor.
 
-## PM — fluxo em 3 etapas
+## PM — caminho recomendado (guiado)
 
-Leia **`tools/analytics-migrate/PM_QUICKSTART.md`**.
+```text
+@analytics-migrate --setup
+```
 
-### Etapa 1 — Input do PM (antes do pipeline)
+O agente **entrevista** o PM (squad, time GitHub, dominios, perguntas P0/P1), gera os arquivos de contexto, roda o discover e pergunta se quer seguir com o pipeline.
+
+Leia tambem **`tools/analytics-migrate/PM_QUICKSTART.md`**.
+
+### Etapa 1 — Input do PM (manual OU via --setup)
 
 | # | Acao | Arquivo |
 |---|------|---------|
 | 1 | Mapear dominios e contextos da squad | `config/dominios-{squad}.md` (template: `templates/dominios-squad.template.md`) |
 | 2 | Indicar **perguntas de negocio principais** (P0/P1) por dominio | `config/perguntas-negocio-{squad}.md` (template: `templates/perguntas-negocio-squad.template.md`) |
 | 3 | Apontar paths no config | `analytics-migrate.config.yml` → `workspace.dominios` + `workspace.perguntas_negocio` |
+
+Scaffold via script (usado pelo `--setup`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\setup-squad.ps1 -ListTeams
+powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\setup-squad.ps1 `
+  -SquadId minha-squad -SquadName "Minha Squad" -GithubTeam vd-sellout-exemplo
+```
 
 ### Etapa 2 — Skill (automatico)
 
@@ -52,8 +67,11 @@ Artefatos gerados em `tools/analytics-migrate/output/`:
 
 | Coluna | Conteudo |
 |--------|----------|
-| `classificacao` | `novo` (pageview/codigo a criar) · `migrar` · `remover` |
-| `arquivo_tag` | Classe `*_tag.dart` |
+| `navbar` | Area / microapp |
+| `dominio_ct` | Dominio C&T |
+| `status` | Status do de-para (`migrar`, `remover`, `adicionar_pageview`, …) |
+| `classificacao` | Acao eng: `novo` · `migrar` · `remover` |
+| `contexto_legado` | Contexto legivel do evento legado |
 | `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`; reconstruido se vazio nas demais) |
 | `json_novo` | Envelope GA4 alvo (completo) |
 
@@ -213,7 +231,8 @@ Isso copia agentes para `.github/agents/` e a skill para `.github/skills/` + `.c
 ### Compartilhar com outra squad
 
 1. Link [product-skills](https://github.com/sfsantin-gb/product-skills) + [`PM_QUICKSTART.md`](PM_QUICKSTART.md)
-2. PM preenche `config/dominios-{squad}.md` e ajusta `analytics-migrate.config.yml`
-3. `install.ps1` → discover → `@analytics-migrate --fase all --export-csv`
+2. `install.ps1 -Target C:\megazord_mobile`
+3. No Cursor (so megazord): `@analytics-migrate --setup`
+4. Depois: `@analytics-migrate --fase all --export-csv` (se nao rodou no fim do setup)
 
 Documentacao: `WORKFLOW.md`, `PIPELINE_COMPLETO.md`, `CASE.md`, `INSTALACAO_SKILLS_CORPORATIVAS.md`.

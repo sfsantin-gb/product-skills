@@ -92,7 +92,8 @@ $rows = Import-Csv $SourceCsv -Encoding UTF8
 $out = [System.Collections.Generic.List[object]]::new()
 
 foreach ($row in $rows) {
-    $classificacao = Get-ClassificacaoEng $row.status
+    $status = [string]$row.status
+    $classificacao = Get-ClassificacaoEng $status
     if (-not $classificacao) { continue }
 
     $legacyJson = if ($classificacao -eq 'novo') { '' } else { Get-EntregaLegacyJson $row }
@@ -106,10 +107,13 @@ foreach ($row in $rows) {
     }
 
     $out.Add([pscustomobject]@{
+        navbar             = [string]$row.navbar
+        dominio_ct         = [string]$row.dominio_ct
+        status             = $status
         classificacao      = $classificacao
-        arquivo_tag        = $row.arquivo_tag
+        contexto_legado    = [string]$row.contexto_legado
         evento_legado_json = $legacyJson
-        json_novo          = $row.json_novo
+        json_novo          = [string]$row.json_novo
     })
 }
 

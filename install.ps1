@@ -123,5 +123,5 @@ Write-Host ""
 Write-Host "Instalacao concluida em $targetRoot" -ForegroundColor Green
 if ($Skills -contains 'analytics-migrate') {
     Write-Host "PM: leia tools/analytics-migrate/PM_QUICKSTART.md" -ForegroundColor Cyan
-    Write-Host "Cursor: abra somente o megazord e use @analytics-migrate" -ForegroundColor Cyan
+    Write-Host "Cursor: abra somente o megazord e use @analytics-migrate --setup" -ForegroundColor Cyan
 }

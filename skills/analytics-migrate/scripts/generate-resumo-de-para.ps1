@@ -67,15 +67,18 @@ $md = @"
 
 | Artefato | Descricao |
 |----------|-----------|
-| **[ENTREGA_ENG.csv](./ENTREGA_ENG.csv)** | $(if ($entregaExists) { 'Planilha final: classificacao + tag + JSON legado + JSON novo' } else { 'Gerar com `export-entrega-eng.ps1`' }) |
+| **[ENTREGA_ENG.csv](./ENTREGA_ENG.csv)** | $(if ($entregaExists) { 'Planilha final: navbar + dominio + status + contexto + JSON legado/novo' } else { 'Gerar com `export-entrega-eng.ps1`' }) |
 | [TAGUEAMENTO_MIGRADO_CT.csv](./TAGUEAMENTO_MIGRADO_CT.csv) | Inventario completo com criterios e diagnostico |
 
 ### Colunas `ENTREGA_ENG.csv`
 
 | Coluna | Uso |
 |--------|-----|
-| `classificacao` | `novo` \| `migrar` \| `remover` |
-| `arquivo_tag` | Classe `*_tag.dart` a alterar |
+| `navbar` | Area / microapp |
+| `dominio_ct` | Dominio C&T |
+| `status` | Status do de-para (`migrar`, `remover`, `adicionar_pageview`, …) |
+| `classificacao` | Acao eng: `novo` \| `migrar` \| `remover` |
+| `contexto_legado` | Contexto legivel do evento legado |
 | `evento_legado_json` | JSON legado para ctrl+F (vazio em `novo`; reconstruido se vazio nas demais) |
 | `json_novo` | Envelope GA4 completo alvo |
 

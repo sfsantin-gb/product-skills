@@ -9,7 +9,7 @@ Arquivos `.md`, `.csv` e `.json` produzidos por `discover.ps1` e `@analytics-mig
 | Input | `../config/perguntas-negocio-{squad}.md` | Perguntas P0/P1 do PM |
 | Pipeline | `PERGUNTAS_NEGOCIO.md` | Trade-offs — preencher **Decisao PM** |
 | Revisao | `RESUMO_DE_PARA.md` | Numeros gerais do de-para |
-| Handoff eng | **`ENTREGA_ENG.csv`** | 4 colunas: classificacao, arquivo_tag, evento_legado_json, json_novo |
+| Handoff eng | **`ENTREGA_ENG.csv`** | navbar, dominio_ct, status, classificacao, contexto_legado, evento_legado_json, json_novo |
 
 ## Todos os artefatos
 
