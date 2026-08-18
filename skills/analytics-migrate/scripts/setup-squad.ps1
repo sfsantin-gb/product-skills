@@ -163,10 +163,9 @@ Write-Host "Dominios: $dominiosRel"
 Write-Host "Perguntas: $perguntasRel"
 Write-Host ""
 Write-Host "Proximos passos:" -ForegroundColor Cyan
-Write-Host "1. Preencher dominios (## dominio / ### subdominio + > **Contexto:**)"
-Write-Host "2. Preencher perguntas P0/P1"
-Write-Host "3. discover.ps1  OU  no Cursor: @analytics-migrate --setup (continuar entrevista)"
-Write-Host "4. @analytics-migrate --fase all --export-csv"
+Write-Host "1. Gate 1: preencher dominios e dizer **pronto**"
+Write-Host "2. Gates 2-4: perguntas → essenciais → IMPACTO_MIGRACAO.md (um por vez)"
+Write-Host "3. So depois: TAGUEAMENTO_MIGRADO CSV + ENTREGA_ENG.csv"
 
 if ($RunDiscover) {
     $discover = Join-Path $PSScriptRoot 'discover.ps1'

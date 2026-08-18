@@ -13,7 +13,10 @@ if (-not $OutMd) {
     $OutMd = Join-Path $repoRoot 'tools\analytics-migrate\output\RESUMO_DE_PARA.md'
 }
 if (-not $PerguntasMd) {
-    $PerguntasMd = Join-Path $repoRoot 'tools\analytics-migrate\output\PERGUNTAS_NEGOCIO.md'
+    $outParent = Split-Path $SourceCsv -Parent
+    $impacto = Join-Path $outParent 'IMPACTO_MIGRACAO.md'
+    $legadoNome = Join-Path $outParent 'PERGUNTAS_NEGOCIO.md'
+    $PerguntasMd = if (Test-Path $impacto) { $impacto } else { $legadoNome }
 }
 
 $data = Get-Date -Format 'yyyy-MM-dd'
@@ -36,6 +39,8 @@ if (Test-Path $SourceCsv) {
     $comJson = @($rows | Where-Object { $_.json_novo }).Count
 }
 
+$impactoNome = Split-Path $PerguntasMd -Leaf
+$csvNome = Split-Path $SourceCsv -Leaf
 $perguntasExists = Test-Path $PerguntasMd
 $entregaExists = Test-Path (Join-Path (Split-Path $SourceCsv -Parent) 'ENTREGA_ENG.csv')
 
@@ -58,17 +63,17 @@ $md = @"
 
 ## Proximos passos PM
 
-1. Abrir **[PERGUNTAS_NEGOCIO.md](./PERGUNTAS_NEGOCIO.md)** $(if ($perguntasExists) { '(gerado)' } else { '*(ainda nao gerado — rodar `@analytics-migrate --fase business-impact`)*' })
-2. Preencher coluna **Decisao PM (se discordar)** onde discordar do veredito
-3. Consolidar: ``@analytics-migrate --aprovar``
-4. Regenerar entrega eng: ``powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/export-entrega-eng.ps1``
+1. Baixar **[$csvNome](./$csvNome)** — planilha completa: cada linha tem `status` e **motivo** (`notas`)
+2. Se discordar, pintar/filtrar no Excel e falar o que muda; o agente aplica
+3. Entregar **[ENTREGA_ENG.csv](./ENTREGA_ENG.csv)** para engenharia (so implementacao, sem o ensaio do motivo)
+4. Impacto (gate 4): **[$impactoNome](./$impactoNome)** $(if ($perguntasExists) { '(revisado)' } else { '*(ainda nao gerado)*' })
 
-## Entrega engenharia
+## Dois CSVs
 
-| Artefato | Descricao |
-|----------|-----------|
-| **[ENTREGA_ENG.csv](./ENTREGA_ENG.csv)** | $(if ($entregaExists) { 'Planilha final: navbar + dominio + status + contexto + JSON legado/novo' } else { 'Gerar com `export-entrega-eng.ps1`' }) |
-| [TAGUEAMENTO_MIGRADO_CT.csv](./TAGUEAMENTO_MIGRADO_CT.csv) | Inventario completo com criterios e diagnostico |
+| Artefato | Para quem | Descricao |
+|----------|-----------|-----------|
+| **[$csvNome](./$csvNome)** | PM | Inventario completo: migrar / remover / adicionar / manter **e por que** (`notas`) |
+| **[ENTREGA_ENG.csv](./ENTREGA_ENG.csv)** | Eng | $(if ($entregaExists) { 'navbar + dominio + status + JSON legado/novo' } else { 'Gerar com `export-entrega-eng.ps1`' }) |
 
 ### Colunas `ENTREGA_ENG.csv`
 

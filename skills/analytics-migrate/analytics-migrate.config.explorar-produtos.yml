@@ -1,0 +1,25 @@
+# Jornada Explorar Produtos (sell-in).
+# Docs/outputs no catalogo product-skills: docs/explorar-produtos/ e outputs/explorar-produtos/
+# Canonico no megazord: tools/analytics-migrate/analytics-migrate.config.explorar-produtos.yml
+
+squad:
+  id: explorar-produtos
+  name: "Explorar Produtos"
+  github_team: vd-sellin-explorar-produtos
+
+megazord:
+  root: C:/megazord_mobile
+  codeowners: .github/CODEOWNERS
+
+workspace:
+  dominios: tools/analytics-migrate/config/dominios-explorar-produtos.md
+  perguntas_negocio: tools/analytics-migrate/config/perguntas-negocio-explorar-produtos.md
+  output_dir: tools/analytics-migrate/output-explorar-produtos
+  guia_escopo: tools/analytics-migrate/docs/GUIA_CONTEXTOS_TAGUEAMENTO_EXPLORAR_PRODUTOS.md
+
+discover:
+  scope_mode: merge
+  include_shared: false
+  include_packages: false
+  include_megazord_app: false
+  force: true

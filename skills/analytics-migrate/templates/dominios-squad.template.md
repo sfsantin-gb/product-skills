@@ -1,7 +1,7 @@
 # Dominios — {Nome da Squad}
 
 > Mapeamento dos dominios e subdominios do time, com contextos de responsabilidade.
-> Este arquivo alimenta `EVENTOS_ESSENCIAIS_{SQUAD}.md` no discover do `@analytics-migrate`.
+> **Gate 1.** O agente preenche este arquivo e **para**. PM revisa (entra/sai) e diz **pronto**.
 
 **Documentos relacionados:**
 
@@ -47,11 +47,10 @@ Opcional em contexto:
 > * Hub Gestao > Adicionar venda
 ```
 
-## Checklist PM antes do discover
+## Checklist PM (gate 1)
 
 - [ ] Cada `##` representa um dominio real do time (nao generico)
 - [ ] Cada `###` mapeia para fluxo reconhecivel no app
 - [ ] Todo subdominio tem bloco `> **Contexto:**`
+- [ ] Dizer **pronto** para o agente gerar as perguntas de negocio
 - [ ] `analytics-migrate.config.yml` aponta para este arquivo em `workspace.dominios`
-- [ ] Perguntas P0/P1 preenchidas em `config/perguntas-negocio-{squad}.md`
-- [ ] `workspace.perguntas_negocio` no config aponta para o arquivo de perguntas

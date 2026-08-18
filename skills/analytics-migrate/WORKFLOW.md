@@ -10,16 +10,14 @@ Metodologia em fases com artefatos `.md` e review gates — espelhando o ciclo S
                     └─────────────────┬───────────────────────┘
                                       │
     ┌─────────────────────────────────▼─────────────────────────────────┐
-    │  Fase 0          Fase 1–2         Fase 3–4         Fase 5          │
-    │  DISCOVER   →   AUDIT       →    PRIORIZE    →    TRANSFORM        │
-    │  (inventario)   (nav + PV)       (callbacks +      (de-para GA4)    │
-    │                                  P0/P1/P2)                           │
+    │  Gates PM (STOP apos cada um; PM diz "pronto")                      │
+    │  1 Dominios → 2 Perguntas → 3 Essenciais → 4 IMPACTO_MIGRACAO.md   │
     └─────────────────────────────────┬─────────────────────────────────┘
-                                      │ gate PM: --aprovar
-                    ┌─────────────────▼───────────────────────┐
-                    │  Fase 6 (opcional): JOURNEY MATRIX     │
-                    │  matriz_jornadas_maestro.csv             │
-                    └─────────────────────────────────────────┘
+                                      │
+    ┌─────────────────────────────────▼─────────────────────────────────┐
+    │  Discover + AUDIT + PRIORIZE + TRANSFORM                            │
+    │  → TAGUEAMENTO_MIGRADO_*.csv (completo, motivo) + ENTREGA_ENG.csv  │
+    └─────────────────────────────────┬─────────────────────────────────┘
                                       │
                     ┌─────────────────▼───────────────────────┐
                     │  Codigo Flutter (microapps, packages)   │
@@ -155,24 +153,24 @@ Colunas: `id_jornada`, `ordem_passo`, `tela_rota`, `seletor_ui`, `tipo_acao`, ta
 
 ## Gates consolidados
 
-| Gate | Quem | Quando | Artefato |
-|------|------|--------|----------|
-| G0 — Escopo | PM | Pos Discover | dominios + DISCOVER_REPORT |
-| G1 — Remocao nav | PM | Pos Fase 1–2 | NAVEGACAO + COBERTURA |
-| G2 — Prioridade | PM | Pos Fase 4 | SIMPLIFICACAO_JORNADAS |
-| G3 — Aprovacao final | PM | Pos Fase 5 | MIGRACAO_DECISOES |
-| G4 — Implementacao | Eng | Pos G3 | PRs no megazord |
-| G5 — E2E (opcional) | QA | Pos G4 | matriz_jornadas_maestro |
+| Gate | Quem | Quando | Artefato | Como avancar |
+|------|------|--------|----------|--------------|
+| G1 — Dominios | PM | Inicio | `dominios-{squad}.md` | **pronto** |
+| G2 — Perguntas | PM | Pos G1 | `perguntas-negocio-{squad}.md` | **pronto** |
+| G3 — Essenciais | PM | Pos G2 | `EVENTOS_ESSENCIAIS_*.md` | **pronto** |
+| G4 — Impacto | PM | Pos G3 | `IMPACTO_MIGRACAO.md` | **pronto** |
+| G5 — De-para | PM | Pos G4 | CSV completo + `ENTREGA_ENG.csv` | baixar CSV; mudar status se quiser |
+| G6 — Implementacao | Eng | Pos G5 | PRs no megazord | — |
+
+**Nao** rode o pipeline tecnico nem gere CSV antes de G1–G4. Ver `SKILL.md`.
 
 ---
 
 ## Invocacao
 
 ```text
-@analytics-migrate --fase discover
-@analytics-migrate --fase all --export-csv
-@analytics-migrate --fase simplify --navbar Divulgar
-@analytics-migrate --aprovar
+quero pesquisar {jornada}
+pronto          (avanca um gate)
 ```
 
 Instalacao: [`INSTALACAO_SKILLS_CORPORATIVAS.md`](INSTALACAO_SKILLS_CORPORATIVAS.md)

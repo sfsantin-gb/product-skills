@@ -180,11 +180,9 @@ $scopeLines += @(
     "",
     "## Proximo passo",
     "",
-    "1. PM revisar ``$perguntasRel`` (perguntas P0/P1 prioritarias)",
-    "2. PM revisar ``EVENTOS_ESSENCIAIS_$squadUpper.md`` (rascunho por dominio)",
-    "3. Rodar ``@analytics-migrate --fase all --export-csv``",
-    "4. Revisar ``RESUMO_DE_PARA.md`` + ``PERGUNTAS_NEGOCIO.md`` → ``@analytics-migrate --aprovar``",
-    "5. Entregar ``ENTREGA_ENG.csv`` para engenharia"
+    "1. PM revisar ``config/dominios-*.md`` (gate 1) e dizer **pronto**",
+    "2. Depois: perguntas → essenciais → IMPACTO_MIGRACAO.md (um gate por vez)",
+    "3. So apos os 4 gates: planilha ``TAGUEAMENTO_MIGRADO_*.csv`` + ``ENTREGA_ENG.csv``"
 )
 $scopeLines | Set-Content $scopeMd -Encoding UTF8
 
@@ -258,10 +256,10 @@ $discoverReport = @(
     "",
     "## Bootstrap concluido",
     "",
-    "Proximo comando sugerido:",
+    "Proximo passo: PM revisar o gate atual e dizer **pronto** (nao rodar --fase all).",
     "",
     '```',
-    "@analytics-migrate --fase all --export-csv",
+    "Revise o gate pendente; so depois dos 4 gates gere o CSV de-para.",
     '```',
     "",
     "## Avisos",

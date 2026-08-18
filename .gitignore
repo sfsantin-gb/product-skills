@@ -3,3 +3,4 @@ Thumbs.db
 *.log
 skills/*/output/*
 !skills/*/output/README.md
+outputs/**/_tag_extract_*.json

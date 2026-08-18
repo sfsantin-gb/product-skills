@@ -52,9 +52,11 @@ Flags: `-DryRun`, `-Force`, `-GithubTeam`, `-SquadId`, `-MegazordRoot`
 
 ### Apos discover
 
-1. PM revisa `EVENTOS_ESSENCIAIS_{SQUAD}.md`
-2. Handoff: `@analytics-migrate --fase navigation` ou `--fase all`
-3. Nao pular coverage apos navigation
+Discover e **interno** apos o gate 1. Nao pule para `--fase all`.
+
+1. Gate 3: PM revisa `EVENTOS_ESSENCIAIS_{SQUAD}.md` e diz **pronto**
+2. Gate 4: `IMPACTO_MIGRACAO.md`
+3. So entao: CSV de-para + `ENTREGA_ENG.csv`
 
 ### Microapps compartilhados
 

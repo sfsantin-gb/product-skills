@@ -1,13 +1,14 @@
 # Perguntas de negocio — {Nome da Squad}
 
-> **Input do PM (fase 1).** Preencha **depois** de `config/dominios-{squad}.md` e **antes** de `@analytics-migrate --fase all`.
-> O pipeline usa este arquivo como fonte prioritaria para `PERGUNTAS_NEGOCIO.md` e validacao de remocoes.
+> **Gate 2.** Preencha **depois** de `config/dominios-{squad}.md` revisado (diga **pronto**).
+> Fonte para `EVENTOS_ESSENCIAIS` (gate 3) e `IMPACTO_MIGRACAO.md` (gate 4).
 
 **Documentos relacionados:**
 
 - Dominios: `tools/analytics-migrate/config/dominios-{squad}.md`
 - Config: `tools/analytics-migrate/analytics-migrate.config.yml` → `workspace.perguntas_negocio`
-- Saida PM: `tools/analytics-migrate/output/PERGUNTAS_NEGOCIO.md`
+- Impacto (gate 4): `tools/analytics-migrate/output/IMPACTO_MIGRACAO.md`
+- De-para PM: `tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_{SQUAD}.csv`
 - Entrega eng: `tools/analytics-migrate/output/ENTREGA_ENG.csv`
 
 ---
@@ -44,4 +45,4 @@
 - [ ] Cada dominio de `dominios-{squad}.md` com perguntas P0 tem ao menos 1 linha aqui
 - [ ] Perguntas sao **decisoes de negocio**, nao nomes de evento soltos
 - [ ] `analytics-migrate.config.yml` aponta para este arquivo em `workspace.perguntas_negocio`
-- [ ] Apos pipeline: revisar `PERGUNTAS_NEGOCIO.md` e preencher coluna **Decisao PM (se discordar)**
+- [ ] Dizer **pronto** para o agente gerar eventos essenciais (gate 3)

@@ -14,26 +14,34 @@ cd product-skills
 powershell -ExecutionPolicy Bypass -File install.ps1 -Target C:\megazord_mobile
 ```
 
-Abra o Cursor **somente** no megazord → primeira vez:
+Abra o Cursor **somente** no megazord → `@analytics-migrate` → *quero pesquisar {jornada}*.
 
-```text
-@analytics-migrate --setup
-```
+Sao **4 revisoes** (dominios, perguntas, eventos essenciais, impacto). Em cada uma o PM diz **pronto**. Depois sai o CSV de-para e a `ENTREGA_ENG.csv`.
 
-O agente pergunta squad, time GitHub, dominios e perguntas P0/P1; gera o contexto e roda o discover.
+## Squads (docs e outputs)
+
+Artefatos de cada jornada neste repo:
+
+| Squad | Docs | Outputs |
+|-------|------|---------|
+| Conteudos e Trafego | [docs/conteudos-e-trafego/](docs/conteudos-e-trafego/) | [outputs/conteudos-e-trafego/](outputs/conteudos-e-trafego/) |
+| Explorar Produtos | [docs/explorar-produtos/](docs/explorar-produtos/) | [outputs/explorar-produtos/](outputs/explorar-produtos/) |
+
+A skill em si (agentes, regras GA4, templates) continua em [skills/analytics-migrate/](skills/analytics-migrate/).
 
 ## Skills disponiveis
 
 | Skill | Pre-requisito | Uso |
 |-------|---------------|-----|
-| [analytics-migrate](skills/analytics-migrate/) | megazord_mobile (read) | Migracao tagueamento legado → GA4 (`--setup` para onboarding) |
+| [analytics-migrate](skills/analytics-migrate/) | megazord_mobile (read) | Migracao tagueamento em 4 gates PM + CSV de-para (`quero pesquisar {jornada}`) |
+| [weekly-meetings-digest](skills/weekly-meetings-digest/) | MCP Google Drive | Digest da semana: resumo, TODOs e FUPs (`@weekly-meetings-digest`) |
 
 ## Como funciona
 
 1. Clone este repo (catalogo)
 2. `install.ps1` copia a skill para o **repo alvo** (megazord)
 3. Skills ficam em `.cursor/skills/` e ferramentas em `tools/` no repo alvo
-4. Invoca no Cursor: `@analytics-migrate --setup` (primeira vez) ou `@analytics-migrate --fase all --export-csv`
+4. Invoca no Cursor: `@analytics-migrate` → *quero pesquisar {jornada}* (4 revisoes + **pronto**) ou `@weekly-meetings-digest`
 
 ## Manter analytics-migrate atualizado
 
