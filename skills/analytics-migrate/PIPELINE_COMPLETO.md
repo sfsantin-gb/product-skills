@@ -58,19 +58,18 @@ O megazord e **leitura** para o agente (como o SDD le o repo para gerar spec). P
 
 | Saida | Uso |
 |-------|-----|
-| `TAGUEAMENTO_MIGRADO_CT.csv` | De-para legado → GA4 |
-| `SIMPLIFICACAO_JORNADAS.md` | P0/P1/P2 — PM decide |
-| `PERGUNTAS_NEGOCIO.md` | Perguntas respondiveis vs nao respondiveis — trade-off PM |
-| `MIGRACAO_DECISOES.md` | Log de aprovacao PM |
-| `NAVEGACAO_AUDITORIA.md` | O que remover |
-
-**Fases internas:** ver [`WORKFLOW.md`](WORKFLOW.md) (Discover → Transform)
+| `dominios-{squad}.md` | Gate 1 |
+| `perguntas-negocio-{squad}.md` | Gate 2 |
+| `EVENTOS_ESSENCIAIS_*.md` | Gate 3 |
+| `IMPACTO_MIGRACAO.md` | Gate 4 — o que continua mensuravel vs o que se perde |
+| `TAGUEAMENTO_MIGRADO_*.csv` | De-para completo (status + motivo em `notas`) |
+| `ENTREGA_ENG.csv` | Handoff eng (JSON), sem o ensaio do motivo |
 
 **Invocacao PM:**
 
 ```text
-@analytics-migrate --fase all --export-csv
-@analytics-migrate --aprovar
+quero pesquisar {jornada}
+pronto
 ```
 
 ---

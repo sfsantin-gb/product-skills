@@ -3,6 +3,7 @@ function Get-NavbarFromCategory {
     $c = ($Category + "").ToLower()
     if ($c -match 'divulgar|catalogo|conteudo|mld|vdstudio|materiais|novidade|treinamento|noticia') { return 'Divulgar' }
     if ($c -match 'menu|minha-loja|perfil|slug|opt-in|opt_in') { return 'Menu' }
+    if ($c -match 'pdp|busca|oferta|vitrine|explorar|produto|marca|favorit|barcode|promoc') { return 'Inicio' }
     if ($c -match 'inicio|home|dash/') { return 'Inicio' }
     return 'Gestao'
 }
@@ -141,6 +142,119 @@ function Extract-EventsFromTagFile {
             label  = $el
             json   = (New-LegacyJson $ec $ea $el '' $customName)
             acao   = "Evento custom $customName"
+        }
+    }
+
+    $constMap = @{}
+    foreach ($cm in [regex]::Matches($content, "(?m)(?:static\s+)?const\s+(\w+)\s*=\s*'([^']*)'")) {
+        $constMap[$cm.Groups[1].Value] = $cm.Groups[2].Value
+    }
+
+    function Resolve-DartExpr([string]$expr) {
+        $t = ($expr + '').Trim().TrimEnd(',')
+        if ($t -match "^'([^']*)'$") { return $matches[1] }
+        if ($t -match '^"([^"]*)"$') { return $matches[1] }
+        if ($constMap.ContainsKey($t)) { return $constMap[$t] }
+        if ($t -match 'addItemEventLabel|removeItemEventLabel|remindMeEventLabel') { return 'adicionar-item:$product' }
+        if ($t -match 'analyticsFormatter|toAnalyticsFormat|toLowerHyphenated') { return '$dynamic' }
+        return $t
+    }
+
+    $methodAt = @()
+    foreach ($m in [regex]::Matches($content, '@override\s+(?:[\w<>,\s\[\]]+\s+)?(\w+)\s*\(')) {
+        $methodAt += @{ name = $m.Groups[1].Value; index = $m.Index }
+    }
+    function Get-EnclosingMethod([int]$idx) {
+        $name = 'sendEvent'
+        foreach ($mp in $methodAt) {
+            if ($mp.index -le $idx) { $name = $mp.name }
+        }
+        return $name
+    }
+
+    $ecomMap = @{
+        logViewItemList     = 'view_item_list'
+        logViewItem         = 'view_item'
+        logSelectItem       = 'select_item'
+        logAddToCart        = 'add_to_cart'
+        logRemoveFromCart   = 'remove_from_cart'
+        logViewPromotion    = 'view_promotion'
+        logSelectPromotion  = 'select_promotion'
+        logAddToWishlist    = 'add_to_wishlist'
+        logSearch           = 'search'
+    }
+    foreach ($ecomName in ($ecomMap.Keys | Sort-Object { $_.Length } -Descending)) {
+        $ga4 = $ecomMap[$ecomName]
+        foreach ($mm in [regex]::Matches($content, "analyticsProvider\.$ecomName\s*\(")) {
+            $method = Get-EnclosingMethod $mm.Index
+            $events += @{
+                method = $method
+                action = $ga4
+                label  = $ga4
+                json   = (New-LegacyJson $category $ga4 $ga4 '' $ga4)
+                acao   = "ECOM $ga4 ($method)"
+            }
+        }
+    }
+
+    foreach ($mm in [regex]::Matches($content, "sendEvent\(\s*(\w+)\s*,\s*\{([\s\S]*?)\}\s*\)")) {
+        $first = $mm.Groups[1].Value
+        $block = $mm.Groups[2].Value
+        $method = Get-EnclosingMethod $mm.Index
+        $customResolved = if ($constMap.ContainsKey($first)) { $constMap[$first] } else { $first }
+        $eaExpr = if ($block -match "(?:_eventActionKey|eventActionKey)\s*:\s*([^\n,]+)") { $matches[1] } else { '' }
+        $elExpr = if ($block -match "(?:_eventLabelKey|eventLabelKey)\s*:\s*([^\n,]+)") { $matches[1] } else { '' }
+        $ecExpr = if ($block -match "(?:_eventCategoryKey|eventCategoryKey)\s*:\s*([^\n,]+)") { $matches[1] } else { '' }
+        $ea = Resolve-DartExpr $eaExpr
+        $el = Resolve-DartExpr $elExpr
+        $ec = Resolve-DartExpr $ecExpr
+        if (-not $ec) { $ec = $category }
+        if ($first -match 'searchEventName|interactionEvent|SuccessEvent|ErrorEvent' -or ($customResolved -and $customResolved -ne 'event' -and $customResolved -ne '_event')) {
+            $events += @{
+                method = $method
+                action = $ea
+                label  = if ($el) { $el } else { $customResolved }
+                json   = (New-LegacyJson $ec $ea $el '' $customResolved)
+                acao   = "Evento custom $customResolved ($method)"
+            }
+            continue
+        }
+        if ($ea -or $el) {
+            $events += @{
+                method = $method
+                action = $ea
+                label  = $el
+                json   = (New-LegacyJson $ec $ea $el)
+                acao   = "Acao registrada: $ea / $el ($method)"
+            }
+        }
+    }
+
+    foreach ($mm in [regex]::Matches($content, 'setCurrentScreen\(\s*([^)]+)\)')) {
+        $arg = $mm.Groups[1].Value.Trim()
+        $screen = Resolve-DartExpr $arg
+        if ([string]::IsNullOrWhiteSpace($screen) -or $screen -eq $arg) {
+            if ($arg -match "'([^']+)'") { $screen = $matches[1] }
+        }
+        if ($screen -and $screen -notmatch "^[\w\.]+$" ) {
+            $method = Get-EnclosingMethod $mm.Index
+            $events += @{
+                method = $method
+                action = 'screen_view'
+                label  = $screen
+                json   = (New-LegacyJson '' '' '' $screen)
+                acao   = "Exibe tela $screen"
+            }
+        }
+        elseif ($screen -match '^/') {
+            $method = Get-EnclosingMethod $mm.Index
+            $events += @{
+                method = $method
+                action = 'screen_view'
+                label  = $screen
+                json   = (New-LegacyJson '' '' '' $screen)
+                acao   = "Exibe tela $screen"
+            }
         }
     }
 

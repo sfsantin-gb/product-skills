@@ -4,7 +4,7 @@ description: Resume perguntas de negocio respondiveis vs nao respondiveis apos a
 handoffs:
   - label: Aprovar decisoes PM
     agent: analytics-migrate
-    prompt: Consolide itens revisar_pm em MIGRACAO_DECISOES.md e regenere PERGUNTAS_NEGOCIO.md se necessario.
+    prompt: Consolide itens revisar_pm em MIGRACAO_DECISOES.md e regenere IMPACTO_MIGRACAO.md se necessario. Nao pule o gate 4.
 ---
 
 ## User Input
@@ -15,10 +15,10 @@ $ARGUMENTS
 
 ## Outline
 
-**Artefato principal (leitura humana):**
-`tools/analytics-migrate/output/PERGUNTAS_NEGOCIO.md`
+**Artefato principal (leitura humana, gate 4):**
+`tools/analytics-migrate/output/IMPACTO_MIGRACAO.md`
 
-Nao ha export CSV para esta fase — markdown e o unico artefato.
+Nao ha export CSV nesta fase. A planilha de-para so sai **depois** do PM dizer **pronto** neste gate.
 
 ### 1. Leitura obrigatoria
 
@@ -29,7 +29,7 @@ Nao ha export CSV para esta fase — markdown e o unico artefato.
 4. `output/TAGUEAMENTO_MIGRADO_CT.md` e `.csv` (preferir CSV para cruzamento em massa)
 5. `output/NAVEGACAO_AUDITORIA.md`, `output/COBERTURA_AUDITORIA.md`, `output/CALLBACKS_MIGRACAO.md`
 6. `output/MIGRACAO_DECISOES.md` (se existir — respeitar aprovacoes PM)
-7. Template: `templates/PERGUNTAS_NEGOCIO.template.md`
+7. Template: `templates/IMPACTO_MIGRACAO.template.md`
 
 ### 2. Objetivo
 
@@ -62,7 +62,7 @@ Para **cada pergunta** em `perguntas-negocio-{squad}.md` (prioridade) e compleme
 
 ### 4. Secoes obrigatorias do markdown
 
-Seguir `templates/PERGUNTAS_NEGOCIO.template.md`:
+Seguir `templates/IMPACTO_MIGRACAO.template.md`:
 
 1. **Resumo executivo** — tabela de contagem + % + secao "O que voce esta abrindo mao"
 2. **Decisoes que mudam o quadro** — itens `revisar_pm` e `fundir_pai`
@@ -85,6 +85,7 @@ Agregar por pergunta de negocio — **nao** listar uma linha por evento legado.
 
 ### 6. Quando executar
 
-- Ultima fase de `@analytics-migrate --fase all` (apos transform)
-- Isolado: `@analytics-migrate --fase business-impact`
-- Reexecutar apos `@analytics-migrate --aprovar` se decisoes PM alterarem remocoes
+- **Gate 4** — depois de dominios, perguntas e essenciais aprovados. Depois de gravar, **PARE** e espere **pronto**.
+- Isolado: `@analytics-migrate --fase business-impact` (nao gera CSV)
+- Pode usar o extract do discover + regras; o CSV detalhado vem no passo seguinte
+- Reexecutar se o PM mudar perguntas/essenciais antes do de-para

@@ -4,7 +4,7 @@ description: Gera TAGUEAMENTO_MIGRADO_CT no novo formato interaction_* e callbac
 handoffs:
   - label: Impacto em perguntas de negocio
     agent: analytics-business-impact
-    prompt: Gere PERGUNTAS_NEGOCIO.md cruzando EVENTOS_ESSENCIAIS com o inventario migrado.
+    prompt: So apos gate 4. Exporte TAGUEAMENTO_MIGRADO CSV com notas=motivo em portugues e ENTREGA_ENG.csv.
 ---
 
 ## User Input
@@ -18,8 +18,10 @@ $ARGUMENTS
 **Artefato principal (leitura humana):**
 `tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_CT.md`
 
-**Export de-para (obrigatorio quando usuario pedir CSV ou `--export-csv`):**
-`tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_CT.csv`
+**Export de-para (obrigatorio apos gate 4, `--export-csv`):**
+`tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_{SQUAD}.csv`
+
+Coluna **`notas`**: motivo em portugues, **nunca vazia** — por que migrar / remover / adicionar / manter. Esta planilha e a leitura do PM. `ENTREGA_ENG.csv` e so o handoff eng (sem o ensaio do motivo).
 
 Executar: `tools/export_tagueamento_migrado_ct.ps1`
 

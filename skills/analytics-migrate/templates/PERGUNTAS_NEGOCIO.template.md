@@ -1,4 +1,7 @@
-# Perguntas de negocio — impacto da migracao
+# Perguntas de negocio — impacto da migracao (legado)
+
+> **Nome novo do artefato:** `IMPACTO_MIGRACAO.md` — use `templates/IMPACTO_MIGRACAO.template.md`.
+> Este arquivo permanece so como referencia de C&T antigo.
 
 > Gerado em {data} pelo pipeline `@analytics-business-impact`.
 > Base: `docs/EVENTOS_ESSENCIAIS_CT.md` + artefatos de migracao (simplify, transform, auditorias).

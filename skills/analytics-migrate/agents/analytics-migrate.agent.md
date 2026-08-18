@@ -17,9 +17,9 @@ handoffs:
   - label: Gerar inventario migrado
     agent: analytics-transform
     prompt: Produza TAGUEAMENTO_MIGRADO_*.md e export CSV com criterio essencial vs nao_essencial.
-  - label: Impacto em perguntas de negocio
+  - label: Impacto da migracao
     agent: analytics-business-impact
-    prompt: Gere PERGUNTAS_NEGOCIO.md cruzando perguntas-negocio-{squad}.md com inventario migrado.
+    prompt: Gere IMPACTO_MIGRACAO.md cruzando perguntas-negocio-{squad}.md com eventos essenciais (gate 4). Nao gere CSV neste passo.
   - label: Exportar entrega eng
     agent: analytics-migrate
     prompt: Rode export-entrega-eng.ps1 e generate-resumo-de-para.ps1 apos aprovacao PM.
@@ -35,86 +35,58 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 Interpret `$ARGUMENTS` for:
 
-- `--setup` - **onboarding guiado** (primeira vez / nova squad): entrevista o PM, gera config + templates, preenche contexto, roda discover
-- `--fase <nome>` - executar uma fase: `navigation`, `coverage`, `callbacks`, `simplify`, `transform`, `business-impact`, `all`
+- `--setup` / "quero pesquisar {jornada}" - comecar no **gate 1** (dominios). Nao rode o resto.
+- `--continuar` / "pronto" / "proximo" / "acabei" - avancar **um** gate (ler `STATUS_REVISAO.md`)
+- `--fase <nome>` - fase tecnica: `navigation`, `coverage`, `callbacks`, `simplify`, `transform`, `business-impact`, `all`
 - `--navbar <Inicio|Divulgar|Gestao|Menu>` - limitar escopo
 - `--dry-run` - planejar sem gravar artefatos
-- `--export-csv` - gerar export tabular alem do markdown principal
-- `--export-entrega-eng` - gerar `ENTREGA_ENG.csv` + `RESUMO_DE_PARA.md` (handoff eng)
+- `--export-csv` - planilha completa `TAGUEAMENTO_MIGRADO_*.csv` (so apos gate 4)
+- `--export-entrega-eng` - `ENTREGA_ENG.csv` + `RESUMO_DE_PARA.md` (so apos gate 4)
 - `--aprovar` - consolidar decisoes em `MIGRACAO_DECISOES.md`
 
-Se o PM disser "primeira vez", "do zero", "minha squad", "nao sei por onde comecar" **sem** `--fase`, trate como `--setup`.
+Se o PM disser "primeira vez", "do zero", "minha squad", "quero pesquisar", "nao sei por onde comecar" **sem** `--fase`, trate como `--setup` (**so gate 1**).
+
+`--fase all` **antes** dos 4 gates aprovados: recusar e dizer qual gate falta. Depois dos 4: pipeline tecnico + CSV completo + `ENTREGA_ENG.csv`.
 
 ---
 
 ## Outline
 
-### 0. Modo `--setup` (obrigatorio quando pedido)
+### 0. Gates PM (obrigatorio)
 
-Onboarding conversacional. **Nao** rode `--fase all` ate o PM confirmar o discover.
+Siga `SKILL.md` secao **Fluxo obrigatorio — 4 gates**. **HARD STOP** apos cada gate. Nao rode `--fase all` neste modo.
 
-Use a UI nativa de perguntas (`AskQuestion`) quando disponivel; senao, pergunte no chat (uma decisao por vez, 2–3 opcoes quando couber).
+Use a UI nativa de perguntas (`AskQuestion`) quando disponivel; senao, pergunte no chat.
 
-#### Passo A — Identidade da squad
+Leia `output/STATUS_REVISAO.md` se existir e retome o gate pendente.
 
-1. Rode e mostre o resultado:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/setup-squad.ps1 -ListTeams
-   ```
-2. Pergunte:
-   - Nome da squad (ex.: "Estoque e Vendas")
-   - Time GitHub no CODEOWNERS (da lista; se nao souber, oriente a pedir ao eng)
-   - Confirme um `squad id` slug (ex.: `estoque-vendas`)
-3. Scaffold (sem `-Force` a menos que o PM peca sobrescrever):
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/setup-squad.ps1 `
-     -SquadId <id> -SquadName "<nome>" -GithubTeam <team>
-   ```
-4. Explique os arquivos criados:
-   - `tools/analytics-migrate/analytics-migrate.config.yml`
-   - `tools/analytics-migrate/config/dominios-<id>.md`
-   - `tools/analytics-migrate/config/perguntas-negocio-<id>.md`
+#### Gate 1 — Dominios (unica coisa no `--setup` / "quero pesquisar")
 
-#### Passo B — Dominios (entrevista)
+1. Rode `setup-squad.ps1 -ListTeams` se a squad for nova. Confirme nome, time GitHub, slug.
+2. Scaffold se preciso (`setup-squad.ps1` sem `-Force` a menos que o PM peca).
+3. Escreva `config/dominios-<id>.md` (dominios reais, subdominios, contexto em 1 frase). Sem placeholder.
+4. Atualize `STATUS_REVISAO.md`: gate `dominios`, status `aguardando_pm`.
+5. **PARE.** Nao escreva perguntas, essenciais, impacto nem CSV.
 
-1. Peca **2 a 6 dominios** reais do produto (areas grandes, nao telas soltas).
-2. Para cada dominio, peca **1 a 4 subdominios** (fluxos).
-3. Para cada subdominio, peca um **Contexto** em 1 frase: o que a RE faz e por que importa para KPI.
-4. **Escreva** o markdown final em `config/dominios-<id>.md` no formato:
+Quando o PM disser **pronto**: marque gate 1 `aprovado`. Opcional: `discover.ps1` (inventario interno). Va ao gate 2.
 
-```markdown
-## {Dominio}
+#### Gate 2 — Perguntas de negocio
 
-### {Subdominio}
-> **Contexto:** {frase}
-```
+Escreva `config/perguntas-negocio-<id>.md` (P0/P1 + indicador por dominio). **PARE.**
 
-Nao deixe placeholders `{...}` no arquivo final.
+#### Gate 3 — Eventos essenciais
 
-#### Passo C — Perguntas de negocio (entrevista)
+Escreva `EVENTOS_ESSENCIAIS_{SQUAD}.md` cruzando dominios + perguntas + extract. **PARE.**
 
-1. Para cada dominio, peca **perguntas P0** (decisao diaria) e opcionalmente **P1**.
-2. Se o PM nao souber o nome do evento, aceite descricao de negocio na coluna Indicador.
-3. **Escreva** `config/perguntas-negocio-<id>.md` como tabela por dominio.
-4. Mostre um resumo curto e peca confirmacao ("posso gravar assim?").
+#### Gate 4 — Impacto da migracao
 
-#### Passo D — Discover
+Escreva `IMPACTO_MIGRACAO.md` (trade-offs). **PARE.** Nao gere CSV neste passo.
 
-1. Com confirmacao do PM, rode:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools/analytics-migrate/scripts/discover.ps1
-   ```
-2. Resuma `DISCOVER_REPORT.md` / `ESCOPO_*.md` (pastas, #eventos, shared).
-3. Se escopo vazio: o time GitHub provavelmente esta errado ou sem acesso — volte ao Passo A.
+#### Depois do gate 4 aprovado
 
-#### Passo E — Pipeline (opcional)
+Aí sim: pipeline tecnico (secoes 2–4) + `TAGUEAMENTO_MIGRADO_*.csv` (motivo em `notas`) + `ENTREGA_ENG.csv`.
 
-Pergunte se quer rodar agora:
-
-- **Sim** → execute o fluxo `--fase all --export-csv` (secoes 1–4 abaixo)
-- **Nao** → diga o proximo comando: `@analytics-migrate --fase all --export-csv`
-
-Nunca invente inventarios sem discover.
+Nunca invente inventario sem discover. Discover so **depois** do gate 1 aprovado.
 
 ---
 
@@ -127,9 +99,9 @@ Nunca invente inventarios sem discover.
 5. Leia `tools/analytics-migrate/output/_tag_extract_{squad}.json` ou `TAGUEAMENTO_LEGADO_*.md`
 6. Contexto PM: `config/dominios-{squad}.md`, `config/perguntas-negocio-{squad}.md`
 7. Codigo: `packages/flutter_monitor/docs/GUIA_TAGUEAMENTO_GA4.md`, `tagger_navigator_observer.dart`
-8. Se dominios/perguntas estiverem so com placeholders de template → **interrompa e entre em `--setup`**
+8. Se dominios/perguntas/essenciais/impacto do gate atual estiverem so com placeholder → **pare no gate** e nao avance
 
-### 2. Pipeline (ordem fixa)
+### 2. Pipeline tecnico (ordem fixa — so apos gate 4)
 
 | Fase | Artefato principal | Export opcional |
 |------|-------------------|-----------------|
@@ -137,12 +109,12 @@ Nunca invente inventarios sem discover.
 | coverage | `tools/analytics-migrate/output/COBERTURA_AUDITORIA.md` | `.csv` |
 | callbacks | `tools/analytics-migrate/output/CALLBACKS_MIGRACAO.md` | `.csv` |
 | simplify | `tools/analytics-migrate/output/SIMPLIFICACAO_JORNADAS.md` | - |
-| transform | `tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_*.md` | `.csv` |
-| business-impact | `tools/analytics-migrate/output/PERGUNTAS_NEGOCIO.md` | - |
+| transform | `tools/analytics-migrate/output/TAGUEAMENTO_MIGRADO_*.md` | `.csv` completo (motivo em `notas`) |
 | entrega-eng | `tools/analytics-migrate/output/ENTREGA_ENG.csv` | `RESUMO_DE_PARA.md` |
 
+`IMPACTO_MIGRACAO.md` e o **gate 4**, nao a ultima fase tecnica.
+
 Nao pule coverage apos prune-navigation.
-Executar `business-impact` apos `transform` (incluido em `--fase all`).
 
 **Convencao:** markdown em `tools/analytics-migrate/output/` (ou `workspace.output_dir` do config); CSV quando `--export-csv`.
 
@@ -157,14 +129,15 @@ Executar `business-impact` apos `transform` (incluido em `--fase all`).
 
 ### 4. Saida do orquestrador
 
-Ao final de `--fase all` ou apos business-impact:
+Ao final do pipeline **depois do gate 4**:
 
-- Resumo: total legado, removidos, mantidos, migrados, lacunas abertas
-- **`RESUMO_DE_PARA.md`**, **`PERGUNTAS_NEGOCIO.md`**, **`ENTREGA_ENG.csv`**
-- Itens `revisar_pm` → orientar `@analytics-migrate --aprovar` apos o PM preencher discordancias
+- Resumo: total legado, removidos, mantidos, migrados, lacunas
+- **`TAGUEAMENTO_MIGRADO_*.csv`** (planilha completa — `notas` = motivo) e **`ENTREGA_ENG.csv`** (eng)
+- **`RESUMO_DE_PARA.md`**, **`IMPACTO_MIGRACAO.md`** (ja revisado no gate 4)
+- Itens `revisar_pm` → orientar o PM a marcar na planilha ou `@analytics-migrate --aprovar`
 
 ## Handoffs
 
 - `@analytics-prune-navigation`, `@analytics-coverage`, `@analytics-callbacks`, `@analytics-simplify`, `@analytics-transform`, `@analytics-business-impact`
-- `@analytics-plan` - novos eventos em features (pos-migracao)
+- `@analytics-plan` - eventos novos no Tagbook **Tagueamento VD Studio** (le modelo, monta linha; grava so com Sheets + confirmacao)
 - `@speckit.specify` - spec de implementacao no megazord_mobile

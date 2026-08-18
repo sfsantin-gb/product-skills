@@ -5,7 +5,7 @@ Bootstrap do tagueamento para qualquer squad do megazord. **Roda inteiro dentro 
 ## Pre-requisitos
 
 1. Clone **megazord_mobile**
-2. Arquivo **`config/dominios-{squad}.md`** escrito pelo PM
+2. Arquivo **`config/dominios-{squad}.md`** escrito e **revisado** pelo PM (gate 1)
 3. Time mapeado no **CODEOWNERS** do megazord
 4. **Cursor** para invocar `@analytics-migrate`
 
@@ -27,7 +27,7 @@ cd C:\megazord_mobile
 powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\install-agents.ps1
 ```
 
-**PM:** leia [`PM_QUICKSTART.md`](PM_QUICKSTART.md).
+Abra o Cursor **somente** no megazord → `@analytics-migrate` → *quero pesquisar {jornada}*. Quatro revisoes com **pronto** entre cada uma; depois o CSV de-para.
 
 ## Configuracao
 
@@ -41,17 +41,15 @@ copy tools\analytics-migrate\analytics-migrate.config.example.yml tools\analytic
 | `workspace.dominios` | PM | `tools/analytics-migrate/config/dominios-ct.md` |
 | `workspace.output_dir` | PM | `tools/analytics-migrate/output` |
 
-## Fase 0 — Discover (comecar aqui)
+## Gates PM (comecar aqui)
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\discover.ps1
-```
+1. Dominios → **pronto**
+2. Perguntas → **pronto**
+3. Eventos essenciais → **pronto**
+4. Impacto (`IMPACTO_MIGRACAO.md`) → **pronto**
+5. Planilha completa CSV + `ENTREGA_ENG.csv`
 
-**Dry-run:**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\analytics-migrate\scripts\discover.ps1 -DryRun
-```
+Discover (`discover.ps1`) roda **depois** do gate 1, nao no lugar das revisoes.
 
 ### O que o discover gera
 
@@ -62,13 +60,12 @@ Artefatos em `tools/analytics-migrate/output/`:
 | `_tag_extract_{squad}.json` | Inventario legado extraido do codigo |
 | `TAGUEAMENTO_LEGADO_{SQUAD}.md` | Tabela legivel |
 | `ESCOPO_{SQUAD}.md` | Microapps/packages do CODEOWNERS |
-| `EVENTOS_ESSENCIAIS_{SQUAD}.md` | Rascunho a partir de dominios.md |
+| `EVENTOS_ESSENCIAIS_{SQUAD}.md` | Rascunho — **gate 3** e a versao que o PM revisa |
 | `DISCOVER_REPORT.md` | Resumo + proximos passos |
 
-## Pipeline completo (apos discover)
+## Pipeline tecnico (apos os 4 gates)
 
 ```
-@analytics-migrate --fase discover
 @analytics-migrate --fase all --export-csv
 ```
 
