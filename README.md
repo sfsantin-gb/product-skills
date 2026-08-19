@@ -34,14 +34,15 @@ A skill em si (agentes, regras GA4, templates) continua em [skills/analytics-mig
 | Skill | Pre-requisito | Uso |
 |-------|---------------|-----|
 | [analytics-migrate](skills/analytics-migrate/) | megazord_mobile (read) | Migracao tagueamento em 4 gates PM + CSV de-para (`quero pesquisar {jornada}`) |
-| [weekly-meetings-digest](skills/weekly-meetings-digest/) | MCP Google Drive | Digest da semana: resumo, TODOs e FUPs (`@weekly-meetings-digest`) |
+
+Digest pessoal de reunioes: vive em [`sfsantin-gb/pessoal-sofia`](https://github.com/sfsantin-gb/pessoal-sofia) (`@weekly-meetings-digest`).
 
 ## Como funciona
 
 1. Clone este repo (catalogo)
 2. `install.ps1` copia a skill para o **repo alvo** (megazord)
 3. Skills ficam em `.cursor/skills/` e ferramentas em `tools/` no repo alvo
-4. Invoca no Cursor: `@analytics-migrate` → *quero pesquisar {jornada}* (4 revisoes + **pronto**) ou `@weekly-meetings-digest`
+4. Invoca no Cursor: `@analytics-migrate` → *quero pesquisar {jornada}* (4 revisoes + **pronto**)
 
 ## Manter analytics-migrate atualizado
 
